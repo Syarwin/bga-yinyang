@@ -1,0 +1,185 @@
+/**
+ *------
+ * BGA framework: © Gregory Isabelli <gisabelli@boardgamearena.com> & Emmanuel Colin <ecolin@boardgamearena.com>
+ * YinYang implementation : © <Your name here> <Your email address here>
+ *
+ * This code has been produced on the BGA studio platform for use on http://boardgamearena.com.
+ * See http://en.boardgamearena.com/#!doc/Studio for more information.
+ * -----
+ *
+ * yinyang.css
+ *
+ * YinYang stylesheet
+ *
+ */
+
+div#board {
+  display:flex;
+  justify-content: flex-start;
+  align-items: center;
+  flex-direction: column;
+}
+
+div#grid-container {
+  border:2px solid black;
+  border-radius: 5px;
+  padding:20px;
+  width:504px;
+  height:504px;
+  background-color:#e9cab7;
+  box-shadow: 2px 2px 5px #333;
+}
+
+div#yinyang-grid {
+ display: grid;
+ width:500px;
+ height:500px;
+ grid-template-columns: repeat(4, 1fr);
+ grid-template-rows: repeat(4, 1fr);
+ border:2px solid black;
+}
+
+div#yinyang-grid div.square {
+  border-right:1px solid black;
+  border-bottom:1px solid black;
+  position:relative;
+}
+
+div#yinyang-grid div#square-0-3,
+div#yinyang-grid div#square-1-3,
+div#yinyang-grid div#square-2-3,
+div#yinyang-grid div#square-3-3 {
+  border-right:none;
+}
+
+div#yinyang-grid div#square-3-0,
+div#yinyang-grid div#square-3-1,
+div#yinyang-grid div#square-3-2,
+div#yinyang-grid div#square-3-3 {
+  border-bottom:none;
+}
+
+
+
+div.square::before {
+  content:"";
+  position:absolute;
+  display:block;
+  width:80%;
+  height:80%;
+  top:10%;
+  left:10%;
+  border-radius:50%;
+}
+
+div.square[data-token="0"]::before { background-color:transparent; }
+div.square[data-token="1"]::before { background-color:black; }
+div.square[data-token="2"]::before { background-color:white; border:1px solid black; }
+
+
+#player-private-hand {
+  display:flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+  margin-top:40px;
+}
+
+.domino {
+  width: 300px;
+  height: 100px;
+  background-color:#e9cab7;
+  box-shadow: 2px 2px 5px #333;
+  display:flex;
+  flex-direction: row;
+  position:relative;
+  z-index:2;
+}
+
+.domino .domino-cause, .domino .domino-effect  {
+  display: grid;
+  box-sizing: border-box;
+  width:100px;
+  height:100px;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  border:1px solid black;
+}
+
+.domino .domino-cause.invalid, .domino .domino-effect.invalid  {
+  border:1px solid red;
+}
+
+.domino .domino-arrow {
+  width:100px;
+  height:100px;
+  box-sizing: border-box;
+  position:relative;
+  display:flex;
+  align-items: center;
+  justify-content: center;
+  border-top:2px solid black;
+  border-bottom:2px solid black;
+}
+.domino .domino-arrow::before {
+  content:'';
+  display:block;
+  width: 0;
+  height: 0;
+  border-top: 20px solid transparent;
+  border-bottom: 20px solid transparent;
+  border-left: 40px solid black;
+}
+
+.domino  div.square {
+  border:1px solid black;
+  position:relative;
+}
+.domino.editable div.square { cursor:pointer; }
+.domino.editable div.square:hover {
+  background-color:rgba(255,255,255,0.5);
+}
+
+.domino .domino-types {
+  width: 104px;
+  height: 36px;
+  position: absolute;
+  background-color: #e9cab7;
+  z-index: -1;
+  top: 0px;
+  left: 98px;
+  transition: top 1s;
+  border: 1px solid black;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: 1fr;
+  box-sizing: border-box;
+}
+.domino.editable .domino-types { top: -34px; }
+
+
+.domino .domino-types div {
+  border:1px solid black;
+  background-size: 85%;
+  background-position: center center;
+  background-repeat: no-repeat;
+  cursor:pointer;
+}
+.domino .domino-types div:hover { background-color:rgba(255,255,255,0.3); }
+.domino .domino-types .domino-type-creation { background-image: url("img/icon-creation.svg"); }
+.domino .domino-types .domino-type-destruction { background-image: url("img/icon-destruction.svg"); }
+.domino .domino-types .domino-type-adaptation { background-image: url("img/icon-adaptation.svg"); }
+
+.domino[data-type="creation"] .domino-types .domino-type-creation { background-color:rgba(255,255,255,0.6); }
+.domino[data-type="destruction"] .domino-types .domino-type-destruction { background-color:rgba(255,255,255,0.6); }
+.domino[data-type="adaptation"] .domino-types .domino-type-adaptation { background-color:rgba(255,255,255,0.6); }
+
+
+.domino[data-type="adaptation"] .domino-effect {
+  background-image: url("img/icon-shuffle.svg");
+  background-size: 50%;
+  background-position: center center;
+  background-repeat: no-repeat;
+  border:2px solid black;
+}
+.domino[data-type="adaptation"] .domino-effect .square { display:none; }
