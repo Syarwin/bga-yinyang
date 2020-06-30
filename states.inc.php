@@ -30,10 +30,11 @@ $machinestates = [
 
   ST_BUILD_DOMINOS => [
     'name' => 'buildDominos',
-    'description' => clienttranslate('${actplayer} must build your dominos'),
+    'description' => clienttranslate('Waiting for the other player to finish building its dominos'),
     'descriptionmyturn' => clienttranslate('${you} must build your dominos'),
     'type' => 'multipleactiveplayer',
     'args' => 'argBuildDominos',
+    'action' => 'stBuildDominos',
     'transitions' => [
       'start' => ST_NEXT_PLAYER,
       'endgame' => ST_GAME_END,
@@ -56,14 +57,47 @@ $machinestates = [
 
   ST_START_OF_TURN => [
     'name' => 'startOfTurn',
-    'description' => '',
+    'description' => clienttranslate('${actplayer} may move a piece or apply a law'),
+    'descriptionmyturn' => clienttranslate('${you} may move a piece or apply a law'),
     'type' => 'activeplayer',
     'action' => 'stStartOfTurn',
     'transitions' => [
+      'move' => ST_MOVE,
+      'applyLaw' => ST_APPLY_LAW,
       'endgame' => ST_GAME_END,
     ],
   ],
 
+  ST_MOVE => [
+    'name' => 'movePiece',
+    'description' => clienttranslate('${actplayer} must move a piece'),
+    'descriptionmyturn' => clienttranslate('${you} must move a piece'),
+    'descriptionskippable' => clienttranslate('${actplayer} may move a piece'),
+    'descriptionskippablemyturn' => clienttranslate('${you} may move a piece'),
+    'type' => 'activeplayer',
+    'args' => 'argMovePiece',
+    'transitions' => [
+      'applyLaw' => ST_APPLY_LAW,
+      'endTurn' => ST_PRE_END_OF_TURN,
+      'endgame' => ST_GAME_END,
+    ],
+  ],
+
+
+  ST_APPLY_LAW => [
+    'name' => 'applyLaw',
+    'description' => clienttranslate('${actplayer} must apply a law'),
+    'descriptionmyturn' => clienttranslate('${you} must apply a law'),
+    'descriptionskippable' => clienttranslate('${actplayer} may apply a law'),
+    'descriptionskippablemyturn' => clienttranslate('${you} may apply a law'),
+    'type' => 'activeplayer',
+    'args' => 'argApplyLaw',
+    'transitions' => [
+      'movePiece' => ST_MOVE,
+      'endTurn' => ST_PRE_END_OF_TURN,
+      'endgame' => ST_GAME_END,
+    ],
+  ],
 
 
   ST_PRE_END_OF_TURN => [

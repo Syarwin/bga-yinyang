@@ -6,6 +6,17 @@
        <div id="square-{X}-{Y}" class="square"></div>
     <!-- END square -->
     </div>
+    <div id="yinyang-overlay">
+    <!-- BEGIN overlay -->
+       <div id="overlay-{X}-{Y}" class="overlay"></div>
+    <!-- END overlay -->
+    </div>
+    <div id="yinyang-mask">
+      <div class='square' data-token='1' data-x='0' data-y='0'></div>
+      <div class='square' data-token='0' data-x='0' data-y='1'></div>
+      <div class='square' data-token='2' data-x='1' data-y='0'></div>
+      <div class='square' data-token='1' data-x='1' data-y='1'></div>
+    </div>
   </div>
 </div>
 <div id="player-private-hand"></div>

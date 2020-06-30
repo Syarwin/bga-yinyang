@@ -33,5 +33,15 @@ class view_yinyang_yinyang extends game_view
         'Y' => $y,
       ]);
     }}
+
+
+    $this->page->begin_block( "yinyang_yinyang", "overlay" );
+    for($x = 0; $x < 3; $x++){
+    for($y = 0; $y < 3; $y++){
+      $this->page->insert_block("overlay", [
+        'X' => $x,
+        'Y' => $y,
+      ]);
+    }}
   }
 }

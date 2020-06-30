@@ -25,7 +25,9 @@ define(["dojo", "dojo/_base/declare", "ebg/core/gamegui", "ebg/counter"], functi
 /*
  * Constructor
  */
-constructor: function () { },
+constructor: function () {
+  this._editableDominos = [];
+},
 
 /*
  * Setup:
@@ -51,9 +53,25 @@ setup: function (gamedatas) {
     dojo.attr('square-' + i + "-" + j, "data-token", gamedatas.board[i][j]);
   }
 
+  var positions = [];
+  for(var i = 0; i < 3; i++)
+  for(var j = 0; j < 3; j++){
+    positions.push({x:i, y:j});
+  }
+  positions.forEach(function(pos){
+    var overlay = $('overlay-' + pos.x + "-" + pos.y);
+    dojo.connect(overlay, "onmouseenter", function(ev){  _this.onMouseEnterOverlay(pos.x, pos.y); });
+    dojo.connect(overlay, "onmouseout", function(ev){  _this.onMouseOutOverlay(); });
+    dojo.connect(overlay, "onclick", function(ev){  _this.onClickOverlay(pos.x, pos.y); });
+  })
+
+
   // Setup hand
   gamedatas.hand.forEach(function(domino){
     dojo.place( _this.format_block( 'jstpl_domino', domino) , 'player-private-hand' );
+    dojo.query("#domino-" + domino.id ).forEach(function(oDomino){
+      dojo.connect(oDomino, 'onclick', function(ev){ _this.onClickDomino(domino.id); });
+    })
     dojo.query("#domino-" + domino.id + " .square").forEach(function(square){
       dojo.connect(square, 'onclick', function(ev){ _this.onClickDominoSquare(domino.id, square); });
     })
@@ -79,7 +97,7 @@ onEnteringState: function (stateName, args) {
   debug('Entering state: ' + stateName, args);
 
    // Stop here if it's not the current player's turn for some states
- //  if (["playerBuild"].includes(stateName) && !this.isCurrentPlayerActive()) return;
+   if (["applyLaw"].includes(stateName) && !this.isCurrentPlayerActive()) return;
 
   // Call appropriate method
   var methodName = "onEnteringState" + stateName.charAt(0).toUpperCase() + stateName.slice(1);
@@ -126,12 +144,21 @@ onUpdateActionButtons: function (stateName, args, suppressTimers) {
 
 
 
+////////////////////////////////
+////////////////////////////////
+////////  Build dominos  ///////
+////////////////////////////////
+////////////////////////////////
+
 onEnteringStateBuildDominos: function(args){
   this.makeDominosEditable(args._private.dominos);
 },
 
 
 makeDominosEditable: function(dominos){
+  if(!this.isCurrentPlayerActive())
+    return;
+
   this._editableDominos = dominos;
   dominos.forEach(function(dominoId){
     dojo.addClass('domino-' + dominoId, 'editable');
@@ -141,7 +168,7 @@ makeDominosEditable: function(dominos){
 
 
 onClickDominoSquare: function(dominoId, square){
-  if(!dojo.hasClass('domino-' + dominoId, 'editable'))
+  if(!dojo.hasClass('domino-' + dominoId, 'editable') || !this.isCurrentPlayerActive())
     return;
 
   var token = parseInt(dojo.attr(square, 'data-token'));
@@ -185,7 +212,7 @@ checkDomino: function(dominoId){
 
   if(type == "creation"){
     okCause = (nCause <= 2);
-    okEffect = (diff == 0) && (newEffect == 2);
+    okEffect = (diff == 0) && (newEffect == 2) && (newCause == 0);
   } else if(type == "destruction"){
     okCause = (nCause > 0);
     okEffect = (diff == 0) && (newCause == 1) && (newEffect == 0);
@@ -219,10 +246,91 @@ checkDomino: function(dominoId){
 
 onClickConfirmDominos: function(){
   this.takeAction("confirmDominos", {
-    playerId: this.getActivePlayerId(),
+    playerId: this.getCurrentPlayerId(),
+  });
+  this.clearPossible();
+},
+
+
+
+////////////////////////////////
+////////////////////////////////
+////////  Start of turn  ///////
+////////////////////////////////
+////////////////////////////////
+onEnteringStateStartOfTurn: function(args){
+  var _this = this;
+  this.addActionButton('buttonMove', _('Move'), function(){ _this.takeAction('chooseMove'); }, null, false, 'blue');
+  this.addActionButton('buttonApplyLaw', _('Apply law'), function(){ _this.takeAction('chooseApplyLaw'); }, null, false, 'blue');
+},
+
+
+onEnteringStateApplyLaw: function(args){
+  this._selectableDominos = args.dominos;
+  this.makeDominosSelectable();
+},
+
+makeDominosSelectable: function(){
+  this._selectableDominos.forEach(function(domino){
+    dojo.addClass('domino-' + domino.id, 'selectable');
   });
 },
 
+onClickDomino: function(dominoId){
+  if(!dojo.hasClass('domino-' + dominoId, 'selectable') || !this.isCurrentPlayerActive())
+    return;
+
+  var domino = this._selectableDominos.find(function(elem){ return elem.id == dominoId; });
+  if(!domino)
+    return;
+  this._selectedDomino = domino;
+  dojo.query('.domino').removeClass("selected");
+  dojo.addClass('domino-' + domino.id, 'selected');
+
+  dojo.query('#yinyang-mask .square').forEach(function(square){
+    var x = dojo.attr(square, "data-x"), y = dojo.attr(square, "data-y");
+    dojo.attr(square, "data-token", domino.type == "adaptation"? domino['cause'+x+y] : domino['effect'+x+y]);
+  })
+
+  dojo.query('.overlay').removeClass("selectable");
+  domino.locations.forEach(function(location){
+    dojo.addClass('overlay-' + location.x + "-" + location.y, "selectable");
+  });
+},
+
+
+onMouseEnterOverlay: function(x,y){
+  if(!dojo.hasClass('overlay-' + x + "-" + y, 'selectable') || !this.isCurrentPlayerActive())
+    return;
+
+  dojo.style('yinyang-mask', 'opacity', 1);
+  dojo.style('yinyang-mask', 'top', (21 + 124*x) + "px");
+  dojo.style('yinyang-mask', 'left', (21 + 124*y) + "px");
+},
+
+onMouseOutOverlay: function(){
+  dojo.addClass("yinyang-mask", 'notransition');
+  dojo.style("yinyang-mask", "opacity", 0);
+  $("yinyang-mask").offsetHeight;
+  dojo.removeClass("yinyang-mask", 'notransition');
+},
+
+
+onClickOverlay: function(x,y){
+  if(!dojo.hasClass('overlay-' + x + "-" + y, 'selectable') || !this.isCurrentPlayerActive())
+    return;
+
+  this.takeAction("applyLaw", {
+    dominoId:this._selectedDomino.id,
+    x:x,
+    y:y,
+  });
+},
+
+
+notif_lawApplied: function(n){
+  debug("Notif: a law was applied", n.args);
+},
 
  ////////////////////////////////
  ////////////////////////////////
@@ -237,6 +345,15 @@ onClickConfirmDominos: function(){
  clearPossible: function clearPossible() {
    this.removeActionButtons();
    this.onUpdateActionButtons(this.gamedatas.gamestate.name, this.gamedatas.gamestate.args);
+
+   this._editableDominos.forEach(function(dominoId){
+     dojo.removeClass('domino-' + dominoId, 'editable');
+   });
+   this._editableDominos = [];
+
+   dojo.query('.overlay').removeClass("selectable");
+   this._selectedDomino = null;
+   dojo.query('.domino').removeClass("selected");
  },
 
 
@@ -276,7 +393,7 @@ onClickConfirmDominos: function(){
   */
  setupNotifications: function () {
    var notifs = [
- //    ['build', 1000],
+     ['lawApplied', 1000],
    ];
 
    var _this = this;

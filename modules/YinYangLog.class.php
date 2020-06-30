@@ -121,6 +121,15 @@ class YinYangLog extends APP_GameClass
   }
 
 
+  public function addApplyLaw($piece, $to)
+  {
+    $args = [
+      'to'   => $to,
+    ];
+    $this->insert(-1, $piece['id'], 'applyLaw', $args);
+  }
+
+
 
 /////////////////////////////////
 /////////////////////////////////
@@ -140,6 +149,18 @@ class YinYangLog extends APP_GameClass
     return self::getObjectListFromDb("SELECT * FROM log WHERE `action` IN ($actionsNames) AND `player_id` = '$pId' AND `round` = (SELECT round FROM log WHERE `player_id` = $pId AND `action` = 'startTurn' ORDER BY log_id DESC LIMIT 1) - $offset ORDER BY log_id DESC");
   }
 
+
+  public function getLastAction($action, $pId = null, $offset = null)
+  {
+    $actions = $this->getLastActions([$action], $pId, $offset);
+    return count($actions) > 0 ? json_decode($actions[0]['action_arg'], true) : null;
+  }
+
+
+  public function getLastMove()
+  {
+    return $this->getLastAction('move');
+  }
 
 ////////////////////////////////
 ////////////////////////////////

@@ -64,4 +64,40 @@ class YinYangBoard extends APP_GameClass
 
     return $board;
   }
+
+
+  /*
+   * getAvailableLocations:
+   */
+  public function getAvailableLocations($domino)
+  {
+    $board = $this->getBoard();
+    $locations = [];
+    for ($x = 0; $x < 3; $x++) {
+      for ($y = 0; $y < 3; $y++) {
+        if($board[$x][$y] == $domino['cause00'] && $board[$x][$y+1] == $domino['cause01'] && $board[$x+1][$y] == $domino['cause10'] && $board[$x+1][$y+1] == $domino['cause11'])
+          array_push($locations, ['x' => $x, 'y' => $y]);
+      }
+    }
+
+    return $locations;
+  }
+
+
+  public function applyLaw($domino, $pos)
+  {
+    for($i = 0; $i < 2; $i++){
+    for($j = 0; $j < 2; $j++){
+      $x = $i + (int) $pos['x'];
+      $y = $j + (int) $pos['y'];
+      $val = $domino['effect'.$i.$j];
+      self::DbQuery("UPDATE board SET piece = {$val} WHERE x = {$x} AND y = {$y}");
+    }}
+
+    $this->game->log->addApplyLaw($domino, $pos);
+    $this->game->notifyAllPlayers('lawApplied', clienttranslate('${player_name} applied a law'), [
+      'player_name' => $this->game->getActivePlayerName(),
+      'board' => $this->getBoard(),
+    ]);
+  }
 }

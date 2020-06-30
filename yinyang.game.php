@@ -13,6 +13,7 @@
 
 require_once( APP_GAMEMODULE_PATH.'module/table/table.game.php' );
 require_once('modules/constants.inc.php');
+require_once('modules/Utils.class.php');
 require_once("modules/YinYangLog.class.php");
 require_once("modules/YinYangPlayerManager.class.php");
 require_once("modules/YinYangBoard.class.php");
@@ -164,6 +165,14 @@ return 0.3;
 */
 
 
+	////////////////////////////////////
+	/////////   Build dominos   ////////
+	////////////////////////////////////
+	public function stBuildDominos()
+	{
+		$this->gamestate->setAllPlayersMultiactive();
+	}
+
 	public function argBuildDominos()
 	{
 		return $this->playerManager->argBuildDominos();
@@ -173,6 +182,52 @@ return 0.3;
 	{
 		self::DbQuery("UPDATE domino SET type = '{$type}', cause00 = {$cause[0]}, cause01 = {$cause[1]}, cause10 = {$cause[2]}, cause11 = {$cause[3]}, effect00 = {$effect[0]}, effect01 = {$effect[1]}, effect10 = {$effect[2]}, effect11 = {$effect[3]} WHERE id = {$dominoId}");
 	}
+
+
+	public function confirmDominos($playerId)
+	{
+		$pendingDominos = self::getObjectListFromDB("SELECT * FROM domino WHERE player_id = '$playerId' AND type = 'empty'");
+		if(count($pendingDominos) > 0)
+			throw new BgaUserException(_("You still have dominos to build!"));
+
+		$this->gamestate->setPlayerNonMultiactive($playerId, 'start');
+	}
+
+
+	//////////////////////////////////
+	/////////   Apply a law   ////////
+	//////////////////////////////////
+	public function argApplyLaw()
+	{
+		return ($this->getCurrentPlayerId() != $this->getActivePlayerId())? [] : $this->playerManager->getPlayer()->getPlayableLaws();
+	}
+
+
+	public function applyLaw($dominoId, $pos)
+	{
+		$arg = $this->argApplyLaw();
+		Utils::checkApplyLaw($arg, $dominoId, $pos);
+
+		$domino = self::getObjectFromDB("SELECT * FROM domino WHERE id = {$dominoId}");
+		if($domino['type'] != "adaptation"){
+			$this->board->applyLaw($domino, $pos);
+			$this->gamestate->nextState(is_null($this->log->getLastMove())? "movePiece" : "endturn");
+		} else {
+
+		}
+	}
+
+
+
+	//////////////////////////////////
+	/////////   Move a piece  ////////
+	//////////////////////////////////
+	public function argMovePiece()
+	{
+		return [];
+	}
+	
+
 
   ////////////////////////////////////
   ////////////   Zombie   ////////////

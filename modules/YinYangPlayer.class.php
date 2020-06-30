@@ -53,6 +53,11 @@ class YinYangPlayer extends APP_GameClass
     ];
   }
 
+  public function getDominos()
+  {
+    return self::getObjectListFromDb("SELECT * FROM domino WHERE player_id = {$this->id}");
+  }
+
   public function getDominosInHand()
   {
     return self::getObjectListFromDb("SELECT * FROM domino WHERE player_id = {$this->id} AND location = 'hand'");
@@ -61,5 +66,16 @@ class YinYangPlayer extends APP_GameClass
   public function getDominosIdsInHand()
   {
     return array_map(function($domino){ return $domino['id']; }, $this->getDominosInHand());
+  }
+
+
+  public function getPlayableLaws()
+  {
+    $args = ['dominos' => $this->getDominos() ];
+    foreach($args['dominos'] as &$domino){
+      $domino['locations'] = $this->game->board->getAvailableLocations($domino);
+    }
+    Utils::cleanDominos($args);
+    return $args;
   }
 }

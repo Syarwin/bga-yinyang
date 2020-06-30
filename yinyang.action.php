@@ -49,4 +49,38 @@ class action_yinyang extends APP_GameAction
     $this->game->updateDomino($dominoId, $type, $cause, $effect);
     self::ajaxResponse();
   }
+
+  public function confirmDominos()
+  {
+    self::setAjaxMode();
+    $playerId = self::getArg( "playerId", AT_posint, true );
+    $this->game->confirmDominos($playerId);
+    self::ajaxResponse();
+  }
+
+  public function chooseMove()
+  {
+    self::setAjaxMode();
+    $this->game->gamestate->nextState('move');
+    self::ajaxResponse();
+  }
+
+  public function chooseApplyLaw()
+  {
+    self::setAjaxMode();
+    $this->game->gamestate->nextState('applyLaw');
+    self::ajaxResponse();
+  }
+
+
+  public function applyLaw()
+  {
+    self::setAjaxMode();
+    $dominoId = self::getArg( "dominoId", AT_posint, true );
+    $x = self::getArg( "x", AT_posint, true );
+    $y = self::getArg( "y", AT_posint, true );
+    $this->game->applyLaw($dominoId, ['x' => $x, 'y' => $y]);
+    self::ajaxResponse();
+  }
+
 }

@@ -13,6 +13,13 @@
  *
  */
 
+ .notransition {
+   -webkit-transition: none !important;
+   -moz-transition: none !important;
+   -o-transition: none !important;
+   transition: none !important;
+ }
+
 div#board {
   display:flex;
   justify-content: flex-start;
@@ -21,11 +28,11 @@ div#board {
 }
 
 div#grid-container {
+  position:relative;
   border:2px solid black;
   border-radius: 5px;
   padding:20px;
   width:504px;
-  height:504px;
   background-color:#e9cab7;
   box-shadow: 2px 2px 5px #333;
 }
@@ -37,12 +44,14 @@ div#yinyang-grid {
  grid-template-columns: repeat(4, 1fr);
  grid-template-rows: repeat(4, 1fr);
  border:2px solid black;
+ box-sizing: border-box;
 }
 
 div#yinyang-grid div.square {
   border-right:1px solid black;
   border-bottom:1px solid black;
   position:relative;
+  box-sizing: border-box;
 }
 
 div#yinyang-grid div#square-0-3,
@@ -77,6 +86,63 @@ div.square[data-token="1"]::before { background-color:black; }
 div.square[data-token="2"]::before { background-color:white; border:1px solid black; }
 
 
+div#yinyang-overlay {
+  position:absolute;
+  top:82px;
+  left:82px;
+  width:375px;
+  height:375px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  z-index:3;
+}
+
+div#yinyang-overlay div.overlay {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+div#yinyang-overlay div.overlay::before {
+  content:"";
+  display:block;
+  width:30%;
+  height:30%;
+  border-radius:50%;
+  background-color:transparent;
+}
+div#yinyang-overlay div.overlay.selectable::before { background-color:gray; cursor:pointer; }
+div#yinyang-overlay div.overlay.selectable:hover::before { background-color:red; }
+
+div#yinyang-mask {
+  position: absolute;
+  display:none;
+  border-top: 1px solid red;
+  border-left: 1px solid red;
+  width: 249px;
+  height: 249px;
+  top: 20px;
+  left: 20px;
+  box-sizing: border-box;
+  background-color:#ddb69e;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  transition:opacity 1s;
+  opacity:0;
+}
+div#yinyang-mask .square {
+  position:relative;
+  box-sizing: border-box;
+  width:124px;
+  height:124px;
+  border-right: 1px solid red;
+  border-bottom: 1px solid red;
+}
+
+
 #player-private-hand {
   display:flex;
   flex-direction: row;
@@ -95,6 +161,11 @@ div.square[data-token="2"]::before { background-color:white; border:1px solid bl
   position:relative;
   z-index:2;
 }
+.domino.selectable {
+  background-color:#ddc7b9;
+  cursor:pointer;
+}
+
 
 .domino .domino-cause, .domino .domino-effect  {
   display: grid;
@@ -105,6 +176,9 @@ div.square[data-token="2"]::before { background-color:white; border:1px solid bl
   grid-template-rows: repeat(2, 1fr);
   border:1px solid black;
 }
+.domino.selectable:hover .domino-cause, .domino.selectable:hover .domino-effect,
+.domino.selected .domino-cause, .domino.selected .domino-effect { border-color:#3faa5a;}
+
 
 .domino .domino-cause.invalid, .domino .domino-effect.invalid  {
   border:1px solid red;
@@ -120,7 +194,9 @@ div.square[data-token="2"]::before { background-color:white; border:1px solid bl
   justify-content: center;
   border-top:2px solid black;
   border-bottom:2px solid black;
+  background-color:#e9cab7;
 }
+.domino.selectable:hover .domino-arrow, .domino.selected .domino-arrow { border-color:#3faa5a; }
 .domino .domino-arrow::before {
   content:'';
   display:block;
@@ -139,6 +215,7 @@ div.square[data-token="2"]::before { background-color:white; border:1px solid bl
 .domino.editable div.square:hover {
   background-color:rgba(255,255,255,0.5);
 }
+.domino.selectable:hover div.square, .domino.selected div.square { border-color:#3faa5a; }
 
 .domino .domino-types {
   width: 104px;
@@ -183,3 +260,4 @@ div.square[data-token="2"]::before { background-color:white; border:1px solid bl
   border:2px solid black;
 }
 .domino[data-type="adaptation"] .domino-effect .square { display:none; }
+.domino[data-type="adaptation"].selectable:hover .domino-effect, .domino[data-type="adaptation"].selected .domino-effect { border-color:#3faa5a; }
