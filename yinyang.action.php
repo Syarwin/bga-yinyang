@@ -83,4 +83,38 @@ class action_yinyang extends APP_GameAction
     self::ajaxResponse();
   }
 
+  public function movePiece()
+  {
+    self::setAjaxMode();
+    $pieceId = self::getArg( "pieceId", AT_posint, true );
+    $x = self::getArg( "x", AT_posint, true );
+    $y = self::getArg( "y", AT_posint, true );
+    $this->game->movePiece($pieceId, ['x' => $x, 'y' => $y]);
+    self::ajaxResponse();
+  }
+
+
+
+  public function cancelPreviousWorks()
+  {
+    self::setAjaxMode();
+    $this->game->cancelPreviousWorks();
+    self::ajaxResponse();
+  }
+
+
+  public function confirmTurn()
+  {
+    self::setAjaxMode();
+    $this->game->confirmTurn();
+    self::ajaxResponse();
+  }
+
+  public function skip()
+  {
+    self::setAjaxMode();
+    $this->game->skip();
+    self::ajaxResponse();
+  }
+
 }

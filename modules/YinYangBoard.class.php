@@ -29,6 +29,20 @@ class YinYangBoard extends APP_GameClass
   }
 
 
+  public static function getCoords($piece)
+  {
+    return ['x' => (int) $piece['x'], 'y' => (int) $piece['y']];
+  }
+
+  public static function compareCoords($a, $b)
+  {
+    $dx = (int) $b['x'] - (int) $a['x'];
+    $dy = (int) $b['y'] - (int) $a['y'];
+    if($dx != 0) return $dx;
+    return $dy;
+  }
+
+
 
   /*
    * getPlacedPieces: return all pieces on the board
@@ -36,6 +50,14 @@ class YinYangBoard extends APP_GameClass
   public function getPlacedPieces()
   {
     return self::getObjectListFromDb("SELECT * FROM board WHERE piece != 0");
+  }
+
+  public function getFreeSpaces($intersect = null)
+  {
+    $spaces = array_map('YinYangBoard::getCoords', self::getObjectListFromDb("SELECT x, y FROM board WHERE piece = 0"));
+    if(!is_null($intersect) && is_array($intersect))
+      $spaces = array_values(array_uintersect($spaces, $intersect, array('YinYangBoard','compareCoords')));
+    return $spaces;
   }
 
 
@@ -63,6 +85,40 @@ class YinYangBoard extends APP_GameClass
     }
 
     return $board;
+  }
+
+  public function getNeighbours($s)
+  {
+    $spaces = [
+      ['x' => $s['x'] - 1, 'y' => $s['y']],
+      ['x' => $s['x'] + 1, 'y' => $s['y']],
+      ['x' => $s['x'], 'y' => $s['y'] - 1],
+      ['x' => $s['x'], 'y' => $s['y'] + 1],
+    ];
+
+    Utils::filter($spaces, function($space){
+      return $space['x'] >= 0 && $space['x'] < 4 && $space['y'] >= 0 && $space['y'] < 4;
+    });
+    return $spaces;
+  }
+
+  /*
+   * getMovablePieces:
+   */
+  public function getMovablePieces($color)
+  {
+    $pieces = self::getObjectListFromDb("SELECT * FROM board WHERE piece = {$color}");
+    $board = $this->getBoard();
+    $movables = [];
+    foreach($pieces as $piece){
+      $freeNeighbours = $this->getFreeSpaces($this->getNeighbours($piece));
+      if(count($freeNeighbours) > 0){
+        $piece['moves'] = $freeNeighbours;
+        array_push($movables, $piece);
+      }
+    }
+
+    return $movables;
   }
 
 
@@ -98,6 +154,21 @@ class YinYangBoard extends APP_GameClass
     $this->game->notifyAllPlayers('lawApplied', clienttranslate('${player_name} applied a law'), [
       'player_name' => $this->game->getActivePlayerName(),
       'board' => $this->getBoard(),
+      'domino' => $domino,
     ]);
   }
+
+
+  public function movePiece($piece, $pos)
+  {
+    self::DbQuery("UPDATE board SET piece = {$piece['piece']} WHERE x = {$pos['x']} AND y = {$pos['y']}");
+    self::DbQuery("UPDATE board SET piece = 0 WHERE x = {$piece['x']} AND y = {$piece['y']}");
+
+    $this->game->log->addMovePiece($piece, $pos);
+    $this->game->notifyAllPlayers('pieceMoved', clienttranslate('${player_name} moved a piece'), [
+      'player_name' => $this->game->getActivePlayerName(),
+      'board' => $this->getBoard(),
+    ]);
+  }
+
 }

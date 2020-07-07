@@ -61,10 +61,11 @@ $machinestates = [
     'descriptionmyturn' => clienttranslate('${you} may move a piece or apply a law'),
     'type' => 'activeplayer',
     'action' => 'stStartOfTurn',
+    'args' => 'argStartOfTurn',
     'transitions' => [
       'move' => ST_MOVE,
       'applyLaw' => ST_APPLY_LAW,
-      'endgame' => ST_GAME_END,
+      'endGame' => ST_GAME_END,
     ],
   ],
 
@@ -73,13 +74,15 @@ $machinestates = [
     'description' => clienttranslate('${actplayer} must move a piece'),
     'descriptionmyturn' => clienttranslate('${you} must move a piece'),
     'descriptionskippable' => clienttranslate('${actplayer} may move a piece'),
-    'descriptionskippablemyturn' => clienttranslate('${you} may move a piece'),
+    'descriptionmyturnskippable' => clienttranslate('${you} may move a piece'),
     'type' => 'activeplayer',
     'args' => 'argMovePiece',
+    'possibleactions' => ['movePiece', 'skip'],
     'transitions' => [
       'applyLaw' => ST_APPLY_LAW,
+      'skip' => ST_PRE_END_OF_TURN,
       'endTurn' => ST_PRE_END_OF_TURN,
-      'endgame' => ST_GAME_END,
+      'endGame' => ST_GAME_END,
     ],
   ],
 
@@ -89,13 +92,15 @@ $machinestates = [
     'description' => clienttranslate('${actplayer} must apply a law'),
     'descriptionmyturn' => clienttranslate('${you} must apply a law'),
     'descriptionskippable' => clienttranslate('${actplayer} may apply a law'),
-    'descriptionskippablemyturn' => clienttranslate('${you} may apply a law'),
+    'descriptionmyturnskippable' => clienttranslate('${you} may apply a law'),
     'type' => 'activeplayer',
     'args' => 'argApplyLaw',
+    'possibleactions' => ['applyLaw', 'skip'],
     'transitions' => [
       'movePiece' => ST_MOVE,
+      'skip' => ST_PRE_END_OF_TURN,
       'endTurn' => ST_PRE_END_OF_TURN,
-      'endgame' => ST_GAME_END,
+      'endGame' => ST_GAME_END,
     ],
   ],
 

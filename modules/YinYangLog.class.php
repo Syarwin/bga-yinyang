@@ -130,6 +130,16 @@ class YinYangLog extends APP_GameClass
   }
 
 
+  public function addMovePiece($piece, $to)
+  {
+    $args = [
+      'piece' => $piece['piece'],
+      'from' => ['x' => $piece['x'], 'y' => $piece['y']],
+      'to'   => $to,
+    ];
+    $this->insert(-1, $piece['id'], 'movePiece', $args);
+  }
+
 
 /////////////////////////////////
 /////////////////////////////////
@@ -159,8 +169,14 @@ class YinYangLog extends APP_GameClass
 
   public function getLastMove()
   {
-    return $this->getLastAction('move');
+    return $this->getLastAction('movePiece');
   }
+
+  public function getLastLaw()
+  {
+    return $this->getLastAction('applyLaw');
+  }
+
 
 ////////////////////////////////
 ////////////////////////////////

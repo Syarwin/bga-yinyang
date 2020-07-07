@@ -48,11 +48,17 @@ setup: function (gamedatas) {
   });
 
   // Setup board
+  this.setBoard(gamedatas.board);
+  var squares = [];
   for(var i = 0; i < 4; i++)
   for(var j = 0; j < 4; j++){
-    dojo.attr('square-' + i + "-" + j, "data-token", gamedatas.board[i][j]);
+    squares.push({x:i, y:j});
   }
+  squares.forEach(function(square){
+    dojo.connect($('square-' + square.x + "-" + square.y), 'onclick', function(ev){ _this.onClickSquare(square.x, square.y); });
+  });
 
+  // Setup overlay for applying laws
   var positions = [];
   for(var i = 0; i < 3; i++)
   for(var j = 0; j < 3; j++){
@@ -80,11 +86,21 @@ setup: function (gamedatas) {
     })
   });
 
+
+  // Handle for cancelled notification messages
+  dojo.subscribe('addMoveToLog', this, 'yinyang_addMoveToLog');
+
   // Setup game notifications
   this.setupNotifications();
 },
 
 
+setBoard: function(board){
+  for(var i = 0; i < 4; i++)
+  for(var j = 0; j < 4; j++){
+    dojo.attr('square-' + i + "-" + j, "data-token", board[i][j]);
+  }
+},
 
 /*
  * onEnteringState:
@@ -96,8 +112,15 @@ setup: function (gamedatas) {
 onEnteringState: function (stateName, args) {
   debug('Entering state: ' + stateName, args);
 
-   // Stop here if it's not the current player's turn for some states
-   if (["applyLaw"].includes(stateName) && !this.isCurrentPlayerActive()) return;
+  // Update gamestate description when skippable
+  if (args && args.args && args.args.skippable && this.gamedatas.gamestate.descriptionskippable) {
+    this.gamedatas.gamestate.description = this.gamedatas.gamestate.descriptionskippable;
+    this.gamedatas.gamestate.descriptionmyturn = this.gamedatas.gamestate.descriptionmyturnskippable;
+    this.updatePageTitle();
+  }
+
+  // Stop here if it's not the current player's turn for some states
+  if (["startOfTurn", "applyLaw", "movePiece"].includes(stateName) && !this.isCurrentPlayerActive()) return;
 
   // Call appropriate method
   var methodName = "onEnteringState" + stateName.charAt(0).toUpperCase() + stateName.slice(1);
@@ -131,14 +154,112 @@ onUpdateActionButtons: function (stateName, args, suppressTimers) {
   if (!this.isCurrentPlayerActive())
     return;
 
- /*
-   if (stateName == "confirmTurn") {
-     this.addActionButton('buttonConfirm', _('Confirm'), 'onClickConfirm', null, false, 'blue');
-     this.addActionButton('buttonCancel', _('Restart turn'), 'onClickCancel', null, false, 'gray');
-     if (!suppressTimers)
-       this.startActionTimer('buttonConfirm');
-   }
+
+  if (stateName == "confirmTurn") {
+    this.addActionButton('buttonConfirm', _('Confirm'), 'onClickConfirm', null, false, 'blue');
+    this.addActionButton('buttonCancel', _('Restart turn'), 'onClickCancel', null, false, 'gray');
+  }
+
+  if (stateName == "applyLaw" || stateName == "movePiece") {
+    if (args.skippable) {
+      this.addActionButton('buttonSkip', _('Skip'), 'onClickSkip', null, false, 'gray');
+    }
+    if (args.cancelable) {
+      this.addActionButton('buttonCancel', _('Restart turn'), 'onClickCancel', null, false, 'gray');
+    }
+  }
+},
+
+
+////////////////////////////////
+////////////////////////////////
+///////  Confirm/Cancel  ///////
+////////////////////////////////
+////////////////////////////////
+
+/*
+ * addMoveToLog: called by BGA framework when a new notification message is logged.
+ * cancel it immediately if needed.
  */
+yinyang_addMoveToLog: function (logId, moveId) {
+  if (this.gamedatas.cancelMoveIds && this.gamedatas.cancelMoveIds.includes(+moveId)) {
+    debug('Cancel notification message for move ID ' + moveId + ', log ID ' + logId);
+    dojo.addClass('log_' + logId, 'cancel');
+  }
+},
+
+onEnteringStateConfirmTurn: function(args){
+  this.startActionTimer('buttonConfirm');
+},
+
+
+/*
+ * Add a timer to an action and trigger action when timer is done
+ */
+startActionTimer: function (buttonId) {
+  var _this = this;
+  if(!$(buttonId))
+    return;
+  this.actionTimerLabel = $(buttonId).innerHTML;
+  this.actionTimerSeconds = 15;
+  this.actionTimerFunction = function () {
+    var button = $(buttonId);
+    if (button == null) {
+      _this.stopActionTimer();
+    } else if (_this.actionTimerSeconds-- > 1) {
+      debug('Timer ' + buttonId + ' has ' + _this.actionTimerSeconds + ' seconds left');
+      button.innerHTML = _this.actionTimerLabel + ' (' + _this.actionTimerSeconds + ')';
+    } else {
+      debug('Timer ' + buttonId + ' execute');
+      button.click();
+    }
+  };
+  this.actionTimerFunction();
+  this.actionTimerId = window.setInterval(this.actionTimerFunction, 1000);
+  debug('Timer #' + this.actionTimerId + ' ' + buttonId + ' start');
+},
+
+stopActionTimer: function () {
+  if (this.actionTimerId != null) {
+    debug('Timer #' + this.actionTimerId + ' stop');
+    window.clearInterval(this.actionTimerId);
+    delete this.actionTimerId;
+  }
+},
+
+
+/*
+ * onClickSkip: is called when the active player decide to skip work
+ */
+onClickSkip: function () {
+  if (!this.checkAction('skip')) {
+    return;
+  }
+  this.takeAction("skip");
+  this.clearPossible();
+},
+
+
+/*
+ * onClickCancel: is called when the active player decide to cancel previous works
+ */
+onClickCancel: function () {
+  if (!this.checkAction('cancel')) {
+    return;
+  }
+  this.takeAction("cancelPreviousWorks");
+  this.clearPossible();
+},
+
+
+/*
+ * onClickConfirm: is called when the active player decide to confirm their turn
+ */
+onClickConfirm: function () {
+  if (!this.checkAction('confirm')) {
+    return;
+  }
+  this.takeAction("confirmTurn");
 },
 
 
@@ -254,20 +375,29 @@ onClickConfirmDominos: function(){
 
 
 ////////////////////////////////
-////////////////////////////////
 ////////  Start of turn  ///////
-////////////////////////////////
 ////////////////////////////////
 onEnteringStateStartOfTurn: function(args){
   var _this = this;
-  this.addActionButton('buttonMove', _('Move'), function(){ _this.takeAction('chooseMove'); }, null, false, 'blue');
-  this.addActionButton('buttonApplyLaw', _('Apply law'), function(){ _this.takeAction('chooseApplyLaw'); }, null, false, 'blue');
+  if(args.dominos && args.dominos.length > 0)
+    this.addActionButton('buttonApplyLaw', _('Apply law'), function(){ _this.takeAction('chooseApplyLaw'); }, null, false, 'blue');
+
+  if(args.pieces && args.pieces.length > 0)
+    this.addActionButton('buttonMove', _('Move'), function(){ _this.takeAction('chooseMove'); }, null, false, 'blue');
 },
 
+
+
+/////////////////////////////
+/////////////////////////////
+////////  Apply law  ////////
+/////////////////////////////
+/////////////////////////////
 
 onEnteringStateApplyLaw: function(args){
   this._selectableDominos = args.dominos;
   this.makeDominosSelectable();
+  dojo.style("yinyang-overlay", "display", "grid");
 },
 
 makeDominosSelectable: function(){
@@ -330,7 +460,71 @@ onClickOverlay: function(x,y){
 
 notif_lawApplied: function(n){
   debug("Notif: a law was applied", n.args);
+  this.setBoard(n.args.board);
 },
+
+
+
+/////////////////////////////
+/////////////////////////////
+////////  Move piece ////////
+/////////////////////////////
+/////////////////////////////
+
+onEnteringStateMovePiece: function(args){
+  this._selectablePieces = args.pieces;
+  this._selectedPiece = null;
+  this.makePiecesSelectable();
+  dojo.style("yinyang-overlay", "display", "none");
+},
+
+makePiecesSelectable: function(){
+  this._selectablePieces.forEach(function(piece){
+    dojo.addClass('square-' + piece.x + '-' + piece.y, 'selectable');
+  });
+},
+
+onClickSquare: function(x,y){
+  var _this = this;
+  if(!dojo.hasClass('square-' + x + "-" + y, 'selectable') || !this.isCurrentPlayerActive())
+    return;
+
+  // Already a selected piece ? => finish move
+  if(this._selectedPiece != null){
+    this.takeAction("movePiece", {
+      pieceId:this._selectedPiece.id,
+      x:x,
+      y:y,
+    });
+    return;
+  }
+
+  // Make the piece selected and highlight available spaces
+  var piece = this._selectablePieces.find(function(elem){ return elem.x == x && elem.y == y; });
+  if(!piece)
+    return;
+  this._selectedPiece = piece;
+  dojo.query('.square').removeClass("selected selectable");
+  dojo.addClass('square-' + x + "-" + y, 'selected');
+
+  this.addActionButton('buttonCancelSelectedPiece', _('Cancel'), function(){ _this.cancelSelectedPiece(); }, null, false, 'gray');
+
+  piece.moves.forEach(function(move){
+    dojo.addClass('square-' + move.x + "-" + move.y, "selectable");
+  });
+},
+
+cancelSelectedPiece: function(){
+  this._selectedPiece = null;
+  this.clearPossible();
+  this.makePiecesSelectable();
+},
+
+notif_pieceMoved: function(n){
+  debug("Notif: a law was applied", n.args);
+  this.setBoard(n.args.board);
+},
+
 
  ////////////////////////////////
  ////////////////////////////////
@@ -354,6 +548,10 @@ notif_lawApplied: function(n){
    dojo.query('.overlay').removeClass("selectable");
    this._selectedDomino = null;
    dojo.query('.domino').removeClass("selected");
+
+   dojo.query('.square').removeClass("selectable selected");
+   this._selectedPiece = null;
+   this._selectablePieces = null;
  },
 
 
@@ -394,6 +592,7 @@ notif_lawApplied: function(n){
  setupNotifications: function () {
    var notifs = [
      ['lawApplied', 1000],
+     ['pieceMoved', 1000],
    ];
 
    var _this = this;

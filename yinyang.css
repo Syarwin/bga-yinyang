@@ -79,12 +79,23 @@ div.square::before {
   top:10%;
   left:10%;
   border-radius:50%;
+  transition:background 1s;
 }
 
 div.square[data-token="0"]::before { background-color:transparent; }
 div.square[data-token="1"]::before { background-color:black; }
 div.square[data-token="2"]::before { background-color:white; border:1px solid black; }
 
+div.square.selectable {
+  background-color:rgba(255,255,255,0.4);
+  cursor:pointer;
+}
+div.square.selectable:hover {
+  background-color:rgba(255,255,255,0.6);
+}
+div.square.selected {
+  background-color:rgba(24,66,35,0.6);
+}
 
 div#yinyang-overlay {
   position:absolute;

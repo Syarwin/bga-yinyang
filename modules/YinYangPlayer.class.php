@@ -69,13 +69,24 @@ class YinYangPlayer extends APP_GameClass
   }
 
 
-  public function getPlayableLaws()
+  public function getPlayableLaws($display)
   {
-    $args = ['dominos' => $this->getDominos() ];
+    $args = [
+      'dominos' => $display? $this->getDominos() : [],
+      'skippable' => !is_null($this->game->log->getLastMove())
+    ];
     foreach($args['dominos'] as &$domino){
       $domino['locations'] = $this->game->board->getAvailableLocations($domino);
     }
     Utils::cleanDominos($args);
     return $args;
+  }
+
+  public function getMovablePieces()
+  {
+    return [
+      'pieces' => $this->game->board->getMovablePieces($this->no),
+      'skippable' => !is_null($this->game->log->getLastLaw())
+    ];
   }
 }

@@ -21,15 +21,32 @@ abstract class Utils extends APP_GameClass
       return $domino['id'] == $dominoId;
     }));
     if (count($dominos) != 1) {
-      throw new BgaUserException(_("This worker can't be used"));
+      throw new BgaUserException(_("Error when trying to apply domino"));
     }
 
     $locations = array_values(array_filter($dominos[0]['locations'], function ($w) use ($pos) {
       return $w['x'] == $pos['x'] && $w['y'] == $pos['y'];
     }));
     if (count($locations) != 1) {
-      throw new BgaUserException(_("You cannot reach this space with this worker"));
+      throw new BgaUserException(_("You cannot reach use the domino on this space"));
     }
   }
 
+
+  public static function checkMovePiece($arg, $pieceId, $pos)
+  {
+    $pieces = array_values(array_filter($arg['pieces'], function ($piece) use ($pieceId) {
+      return $piece['id'] == $pieceId;
+    }));
+    if (count($pieces) != 1) {
+      throw new BgaUserException(_("Error when trying to move piece"));
+    }
+
+    $locations = array_values(array_filter($pieces[0]['moves'], function ($w) use ($pos) {
+      return $w['x'] == $pos['x'] && $w['y'] == $pos['y'];
+    }));
+    if (count($locations) != 1) {
+      throw new BgaUserException(_("You cannot reach this space with this piece"));
+    }
+  }
 }

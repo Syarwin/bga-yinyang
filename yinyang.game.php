@@ -92,6 +92,35 @@ return 0.3;
   }
 
 
+	////////////////////////////////////
+	/////////   Build dominos   ////////
+	////////////////////////////////////
+	public function stBuildDominos()
+	{
+		$this->gamestate->setAllPlayersMultiactive();
+	}
+
+	public function argBuildDominos()
+	{
+		return $this->playerManager->argBuildDominos();
+	}
+
+	public function updateDomino($dominoId, $type, $cause, $effect)
+	{
+		self::DbQuery("UPDATE domino SET type = '{$type}', cause00 = {$cause[0]}, cause01 = {$cause[1]}, cause10 = {$cause[2]}, cause11 = {$cause[3]}, effect00 = {$effect[0]}, effect01 = {$effect[1]}, effect10 = {$effect[2]}, effect11 = {$effect[3]} WHERE id = {$dominoId}");
+	}
+
+
+	public function confirmDominos($playerId)
+	{
+		$pendingDominos = self::getObjectListFromDB("SELECT * FROM domino WHERE player_id = '$playerId' AND type = 'empty'");
+		if(count($pendingDominos) > 0)
+			throw new BgaUserException(_("You still have dominos to build!"));
+
+		$this->gamestate->setPlayerNonMultiactive($playerId, 'start');
+	}
+
+
 
   ////////////////////////////////////////////////
   ////////////   Next player / Win   ////////////
@@ -102,14 +131,12 @@ return 0.3;
    */
   public function stNextPlayer()
   {
-		/*
     $pId = $this->activeNextPlayer();
     self::giveExtraTime($pId);
     if (self::getGamestateValue("firstPlayer") == $pId) {
       $n = (int) self::getGamestateValue('currentRound') + 1;
       self::setGamestateValue("currentRound", $n);
     }
-		*/
     $this->gamestate->nextState('start');
   }
 
@@ -122,13 +149,17 @@ return 0.3;
     $this->log->startTurn();
   }
 
+	public function argStartOfTurn()
+  {
+		return array_merge($this->argApplyLaw(), $this->argMovePiece());
+  }
+
 
   /*
    * stEndOfTurn: called at the end of each player turn
    */
   public function stEndOfTurn()
   {
-    $this->playerManager->getPlayer()->endOfTurn();
     $this->stCheckEndOfGame();
     $this->gamestate->nextState('next');
   }
@@ -164,33 +195,49 @@ return 0.3;
   }
 */
 
-
-	////////////////////////////////////
-	/////////   Build dominos   ////////
-	////////////////////////////////////
-	public function stBuildDominos()
+	/*
+	 * cancelPreviousWorks: called when a player decide to go back at the beggining of the turn
+	 */
+	public function cancelPreviousWorks()
 	{
-		$this->gamestate->setAllPlayersMultiactive();
+		self::checkAction('cancel');
+
+		if ($this->log->getLastActions() == null) {
+			throw new BgaUserException(_("You have nothing to cancel"));
+		}
+
+		// Undo the turn
+		$moveIds = $this->log->cancelTurn();
+		self::notifyAllPlayers('cancel', clienttranslate('${player_name} restarts their turn'), [
+			'player_name' => self::getActivePlayerName(),
+			'moveIds' => $moveIds,
+			'board' => $this->board->getUiData(),
+			'fplayers' => $this->playerManager->getUiData(self::getCurrentPlayerId()),
+		]);
+
+		// Apply power
+		$this->gamestate->nextState('cancel');
 	}
 
-	public function argBuildDominos()
+	/*
+	 * confirmTurn: called whenever a player confirm their turn
+	 */
+	public function confirmTurn()
 	{
-		return $this->playerManager->argBuildDominos();
+		$this->gamestate->nextState('confirm');
 	}
 
-	public function updateDomino($dominoId, $type, $cause, $effect)
+	/*
+	 * skip: called whenever a player skip an action
+	 */
+	public function skip()
 	{
-		self::DbQuery("UPDATE domino SET type = '{$type}', cause00 = {$cause[0]}, cause01 = {$cause[1]}, cause10 = {$cause[2]}, cause11 = {$cause[3]}, effect00 = {$effect[0]}, effect01 = {$effect[1]}, effect10 = {$effect[2]}, effect11 = {$effect[3]} WHERE id = {$dominoId}");
-	}
+		$args = $this->gamestate->state()['args'];
+    if (!$args['skippable']) {
+      throw new BgaUserException(_("You can't skip this action"));
+    }
 
-
-	public function confirmDominos($playerId)
-	{
-		$pendingDominos = self::getObjectListFromDB("SELECT * FROM domino WHERE player_id = '$playerId' AND type = 'empty'");
-		if(count($pendingDominos) > 0)
-			throw new BgaUserException(_("You still have dominos to build!"));
-
-		$this->gamestate->setPlayerNonMultiactive($playerId, 'start');
+		$this->gamestate->nextState('skip');
 	}
 
 
@@ -199,7 +246,7 @@ return 0.3;
 	//////////////////////////////////
 	public function argApplyLaw()
 	{
-		return ($this->getCurrentPlayerId() != $this->getActivePlayerId())? [] : $this->playerManager->getPlayer()->getPlayableLaws();
+		return $this->playerManager->getPlayer()->getPlayableLaws($this->getCurrentPlayerId() == $this->getActivePlayerId());
 	}
 
 
@@ -211,7 +258,10 @@ return 0.3;
 		$domino = self::getObjectFromDB("SELECT * FROM domino WHERE id = {$dominoId}");
 		if($domino['type'] != "adaptation"){
 			$this->board->applyLaw($domino, $pos);
-			$this->gamestate->nextState(is_null($this->log->getLastMove())? "movePiece" : "endturn");
+			$state = "endTurn";
+			if(is_null($this->log->getLastMove()) && !empty($this->argMovePiece()['pieces']))
+				$state = "movePiece";
+			$this->gamestate->nextState($state);
 		} else {
 
 		}
@@ -224,9 +274,22 @@ return 0.3;
 	//////////////////////////////////
 	public function argMovePiece()
 	{
-		return [];
+		return $this->playerManager->getPlayer()->getMovablePieces();
 	}
-	
+
+	public function movePiece($pieceId, $pos)
+	{
+		$arg = $this->argMovePiece();
+		Utils::checkMovePiece($arg, $pieceId, $pos);
+
+		$piece = self::getObjectFromDB("SELECT * FROM board WHERE id = {$pieceId}");
+		$this->board->movePiece($piece, $pos);
+
+		$state = "endTurn";
+		if(is_null($this->log->getLastLaw()) && !empty($this->argApplyLaw()['dominos']))
+			$state = "applyLaw";
+		$this->gamestate->nextState($state);
+	}
 
 
   ////////////////////////////////////
