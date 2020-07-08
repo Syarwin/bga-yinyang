@@ -379,7 +379,7 @@ onClickConfirmDominos: function(){
 ////////////////////////////////
 onEnteringStateStartOfTurn: function(args){
   var _this = this;
-  if(args.dominos && args.dominos.length > 0)
+  if(args._private.dominos && args._private.dominos.length > 0)
     this.addActionButton('buttonApplyLaw', _('Apply law'), function(){ _this.takeAction('chooseApplyLaw'); }, null, false, 'blue');
 
   if(args.pieces && args.pieces.length > 0)
@@ -395,9 +395,10 @@ onEnteringStateStartOfTurn: function(args){
 /////////////////////////////
 
 onEnteringStateApplyLaw: function(args){
-  this._selectableDominos = args.dominos;
+  this._selectableDominos = args._private.dominos;
   this.makeDominosSelectable();
   dojo.style("yinyang-overlay", "display", "grid");
+  dojo.style("yinyang-mask", "display", "grid");
 },
 
 makeDominosSelectable: function(){
@@ -476,6 +477,7 @@ onEnteringStateMovePiece: function(args){
   this._selectedPiece = null;
   this.makePiecesSelectable();
   dojo.style("yinyang-overlay", "display", "none");
+  dojo.style("yinyang-mask", "display", "none");
 },
 
 makePiecesSelectable: function(){
@@ -516,7 +518,10 @@ onClickSquare: function(x,y){
 
 cancelSelectedPiece: function(){
   this._selectedPiece = null;
-  this.clearPossible();
+  dojo.query('.square').removeClass("selectable selected");
+  this.removeActionButtons();
+  this.onUpdateActionButtons(this.gamedatas.gamestate.name, this.gamedatas.gamestate.args);
+
   this.makePiecesSelectable();
 },
 

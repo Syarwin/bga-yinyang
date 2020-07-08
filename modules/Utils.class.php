@@ -17,7 +17,7 @@ abstract class Utils extends APP_GameClass
 
   public static function checkApplyLaw($arg, $dominoId, $pos)
   {
-    $dominos = array_values(array_filter($arg['dominos'], function ($domino) use ($dominoId) {
+    $dominos = array_values(array_filter($arg['_private']['active']['dominos'], function ($domino) use ($dominoId) {
       return $domino['id'] == $dominoId;
     }));
     if (count($dominos) != 1) {

@@ -6,13 +6,15 @@
 class YinYangBoard extends APP_GameClass
 {
   public $game;
+  public $flipped = false;
   public function __construct($game)
   {
     $this->game = $game;
   }
 
-  public function getUiData()
+  public function getUiData($playerId)
   {
+    $this->flipped = $this->game->playerManager->getPlayer($playerId)->isFlipped();
     return $this->getBoard();
   }
 
@@ -34,6 +36,13 @@ class YinYangBoard extends APP_GameClass
     return ['x' => (int) $piece['x'], 'y' => (int) $piece['y']];
   }
 
+
+  public static function flipCoords(&$piece)
+  {
+    $piece['x'] = 3 - (int) $piece['x'];
+    $piece['y'] = 3 - (int) $piece['y'];
+  }
+
   public static function compareCoords($a, $b)
   {
     $dx = (int) $b['x'] - (int) $a['x'];
@@ -52,9 +61,12 @@ class YinYangBoard extends APP_GameClass
     return self::getObjectListFromDb("SELECT * FROM board WHERE piece != 0");
   }
 
+
   public function getFreeSpaces($intersect = null)
   {
     $spaces = array_map('YinYangBoard::getCoords', self::getObjectListFromDb("SELECT x, y FROM board WHERE piece = 0"));
+    if($this->flipped)
+      array_walk($spaces, 'YinYangBoard::flipCoords');
     if(!is_null($intersect) && is_array($intersect))
       $spaces = array_values(array_uintersect($spaces, $intersect, array('YinYangBoard','compareCoords')));
     return $spaces;
@@ -66,7 +78,7 @@ class YinYangBoard extends APP_GameClass
    * getBoard:
    *   return a 3d matrix reprensenting the board with all the placed pieces
    */
-  public function getBoard()
+  public function getBoard($flipped = null)
   {
     // Create an empty 4*4 board
     $board = [];
@@ -78,10 +90,13 @@ class YinYangBoard extends APP_GameClass
     }
 
     // Add all placed pieces
+    $flip = is_null($flipped)? $this->flipped : $flipped;
     $pieces = $this->getPlacedPieces();
     for ($i = 0; $i < count($pieces); $i++) {
       $p = $pieces[$i];
-      $board[$p['x']][$p['y']] = $p['piece'];
+      $x = $flip? (3 -$p['x']) : $p['x'];
+      $y = $flip? (3 -$p['y']) : $p['y'];
+      $board[$x][$y] = $p['piece'];
     }
 
     return $board;
@@ -108,9 +123,13 @@ class YinYangBoard extends APP_GameClass
   public function getMovablePieces($color)
   {
     $pieces = self::getObjectListFromDb("SELECT * FROM board WHERE piece = {$color}");
-    $board = $this->getBoard();
     $movables = [];
-    foreach($pieces as $piece){
+    foreach($pieces as &$piece){
+      if($this->flipped){
+        $piece['x'] = 3 - $piece['x'];
+        $piece['y'] = 3 - $piece['y'];
+      }
+
       $freeNeighbours = $this->getFreeSpaces($this->getNeighbours($piece));
       if(count($freeNeighbours) > 0){
         $piece['moves'] = $freeNeighbours;
@@ -146,29 +165,39 @@ class YinYangBoard extends APP_GameClass
     for($j = 0; $j < 2; $j++){
       $x = $i + (int) $pos['x'];
       $y = $j + (int) $pos['y'];
+      if($this->flipped){
+        $x = 3 - $x;
+        $y = 3 - $y;
+      }
       $val = $domino['effect'.$i.$j];
       self::DbQuery("UPDATE board SET piece = {$val} WHERE x = {$x} AND y = {$y}");
     }}
 
     $this->game->log->addApplyLaw($domino, $pos);
-    $this->game->notifyAllPlayers('lawApplied', clienttranslate('${player_name} applied a law'), [
-      'player_name' => $this->game->getActivePlayerName(),
-      'board' => $this->getBoard(),
-      'domino' => $domino,
-    ]);
+    foreach($this->game->playerManager->getPlayers() as $player){
+      $this->game->notifyPlayer($player->getId(), 'lawApplied', clienttranslate('${player_name} applied a law'), [
+        'player_name' => $this->game->getActivePlayerName(),
+        'board' => $this->getBoard($player->isFlipped()),
+        'domino' => $domino,
+      ]);
+    }
   }
 
 
   public function movePiece($piece, $pos)
   {
+    if($this->flipped){
+      self::flipCoords($pos);
+    }
     self::DbQuery("UPDATE board SET piece = {$piece['piece']} WHERE x = {$pos['x']} AND y = {$pos['y']}");
     self::DbQuery("UPDATE board SET piece = 0 WHERE x = {$piece['x']} AND y = {$piece['y']}");
 
     $this->game->log->addMovePiece($piece, $pos);
-    $this->game->notifyAllPlayers('pieceMoved', clienttranslate('${player_name} moved a piece'), [
-      'player_name' => $this->game->getActivePlayerName(),
-      'board' => $this->getBoard(),
-    ]);
+    foreach($this->game->playerManager->getPlayers() as $player){
+      $this->game->notifyPlayer($player->getId(), 'pieceMoved', clienttranslate('${player_name} moved a piece'), [
+        'player_name' => $this->game->getActivePlayerName(),
+        'board' => $this->getBoard($player->isFlipped()),
+      ]);
+    }
   }
-
 }

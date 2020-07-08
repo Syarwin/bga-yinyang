@@ -27,15 +27,30 @@ class YinYangPlayer extends APP_GameClass
 
   public function setupNewGame()
   {
-    $sqlDominos = 'INSERT INTO domino (player_id, location) VALUES ';
+//    $sqlDominos = 'INSERT INTO domino (player_id, location) VALUES ';
+    $sqlDominos = 'INSERT INTO `domino`(`player_id`, `type`, `location`, `cause00`, `cause01`, `cause10`, `cause11`, `effect00`, `effect01`, `effect10`, `effect11`) VALUES';
     $values = [];
+
+    if($this->no == 2){
+      $values[] = '("'.$this->id.'","destruction","hand","2","1","2","2","2","0","2","2")';
+      $values[] = '("'.$this->id.'","destruction","hand","1","1","1","1","1","1","0","1")';
+      $values[] = '("'.$this->id.'","adaptation","hand","2","1","2","1","0","0","0","0")';
+      $values[] = '("'.$this->id.'","creation","hand","2","0","2","0","2","1","2","1")';
+    } else {
+      $values[] = '("'.$this->id.'","destruction","hand","1","1","1","1","1","0","1","1")';
+      $values[] = '("'.$this->id.'","destruction","hand","1","2","1","2","1","2","1","0")';
+      $values[] = '("'.$this->id.'","creation","hand","0","0","1","1","1","1","1","1")';
+      $values[] = '("'.$this->id.'","adaptation","hand","2","2","1","2","0","0","0","0")';
+    }
+/*
     for($i = 0; $i < 4; $i++){
       $values[] = "('" . $this->id . "','hand')";
     }
+*/
     self::DbQuery($sqlDominos . implode($values, ','));
   }
 
-
+  public function isFlipped(){ return $this->no == 2; }
   public function getId(){ return $this->id; }
   public function getNo(){ return $this->no; }
   public function getName(){ return $this->name; }
@@ -69,11 +84,12 @@ class YinYangPlayer extends APP_GameClass
   }
 
 
-  public function getPlayableLaws($display)
+  public function getPlayableLaws()
   {
+    $this->game->board->flipped = $this->isFlipped();
+
     $args = [
-      'dominos' => $display? $this->getDominos() : [],
-      'skippable' => !is_null($this->game->log->getLastMove())
+      'dominos' => $this->getDominos(),
     ];
     foreach($args['dominos'] as &$domino){
       $domino['locations'] = $this->game->board->getAvailableLocations($domino);
@@ -84,6 +100,8 @@ class YinYangPlayer extends APP_GameClass
 
   public function getMovablePieces()
   {
+    $this->game->board->flipped = $this->isFlipped();
+
     return [
       'pieces' => $this->game->board->getMovablePieces($this->no),
       'skippable' => !is_null($this->game->log->getLastLaw())

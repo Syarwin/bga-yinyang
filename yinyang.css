@@ -79,11 +79,14 @@ div.square::before {
   top:10%;
   left:10%;
   border-radius:50%;
-  transition:background 1s;
+}
+div#yinyang-grid div.square::before {
+  transition:background 1s, border 1s;
 }
 
+
 div.square[data-token="0"]::before { background-color:transparent; }
-div.square[data-token="1"]::before { background-color:black; }
+div.square[data-token="1"]::before { background-color:black; border:1px solid transparent; }
 div.square[data-token="2"]::before { background-color:white; border:1px solid black; }
 
 div.square.selectable {

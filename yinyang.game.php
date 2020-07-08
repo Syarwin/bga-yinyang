@@ -74,7 +74,7 @@ class yinyang extends Table
     $currentPlayerId = self::getCurrentPlayerId();
     return [
       'fplayers' => $this->playerManager->getUiData($currentPlayerId),
-			'board' => $this->board->getUiData(),
+			'board' => $this->board->getUiData(self::getCurrentPlayerId()),
 			'hand' => $this->playerManager->getPlayer($currentPlayerId)->getDominosInHand(),
     ];
   }
@@ -246,7 +246,12 @@ return 0.3;
 	//////////////////////////////////
 	public function argApplyLaw()
 	{
-		return $this->playerManager->getPlayer()->getPlayableLaws($this->getCurrentPlayerId() == $this->getActivePlayerId());
+		return [
+			'skippable' => !is_null($this->log->getLastMove()),
+			'_private' => [
+				'active' => $this->playerManager->getPlayer()->getPlayableLaws()
+			]
+		];
 	}
 
 
