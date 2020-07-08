@@ -22,9 +22,26 @@
 
 div#board {
   display:flex;
-  justify-content: flex-start;
-  align-items: center;
+  justify-content: space-around;
+  flex-direction: row;
+  flex-wrap:wrap;
+}
+div#dominos-player, div#dominos-opponent {
+  width:300px;
+  height:100%;
+  flex-shrink: 0;
+  display:flex;
   flex-direction: column;
+  justify-content: flex-start;
+}
+
+div#dominos-player .domino, div#dominos-opponent .domino {
+  margin-bottom:20px;
+}
+
+div#dominos-opponent > div.domino {
+  box-shadow: -2px -2px 5px #333;
+  transform:rotate(180deg);
 }
 
 div#grid-container {
@@ -162,7 +179,11 @@ div#yinyang-mask .square {
   flex-direction: row;
   justify-content: space-around;
   align-items: center;
-  margin-top:40px;
+  width:96%;
+  margin:40px auto;
+  border-radius: 20px;
+  background-color: rgba(255,255,255,0.4);
+  padding:30px 0;
 }
 
 .domino {

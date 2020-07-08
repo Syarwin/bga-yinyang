@@ -1,5 +1,6 @@
 {OVERALL_GAME_HEADER}
 <div id="board">
+  <div id="dominos-player"></div>
   <div id="grid-container">
     <div id="yinyang-grid">
     <!-- BEGIN square -->
@@ -18,10 +19,11 @@
       <div class='square' data-token='1' data-x='1' data-y='1'></div>
     </div>
   </div>
+  <div id="dominos-opponent"></div>
 </div>
 <div id="player-private-hand"></div>
 <script type="text/javascript">
-var jstpl_domino = `<div class='domino' data-type='\${type}' id='domino-\${id}'>
+var jstpl_domino = `<div class='domino' data-type='\${type}' data-location='\${location}' id='domino-\${id}'>
   <div class="domino-types">
     <div class="domino-type-destruction"></div>
     <div class="domino-type-creation"></div>

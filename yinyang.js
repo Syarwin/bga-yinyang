@@ -72,19 +72,10 @@ setup: function (gamedatas) {
   })
 
 
-  // Setup hand
-  gamedatas.hand.forEach(function(domino){
-    dojo.place( _this.format_block( 'jstpl_domino', domino) , 'player-private-hand' );
-    dojo.query("#domino-" + domino.id ).forEach(function(oDomino){
-      dojo.connect(oDomino, 'onclick', function(ev){ _this.onClickDomino(domino.id); });
-    })
-    dojo.query("#domino-" + domino.id + " .square").forEach(function(square){
-      dojo.connect(square, 'onclick', function(ev){ _this.onClickDominoSquare(domino.id, square); });
-    })
-    dojo.query("#domino-" + domino.id + " .domino-types div").forEach(function(type){
-      dojo.connect(type, 'onclick', function(ev){ _this.onClickDominoType(domino.id, type); });
-    })
-  });
+  // Setup dominos
+  gamedatas.hand.forEach(function(domino){  _this.addDomino(domino, 'player-private-hand');  });
+  gamedatas.player.forEach(function(domino){  _this.addDomino(domino, 'dominos-player');  });
+  gamedatas.opponent.forEach(function(domino){  _this.addDomino(domino, 'dominos-opponent');  });
 
 
   // Handle for cancelled notification messages
@@ -100,6 +91,20 @@ setBoard: function(board){
   for(var j = 0; j < 4; j++){
     dojo.attr('square-' + i + "-" + j, "data-token", board[i][j]);
   }
+},
+
+addDomino: function(domino, container){
+  var _this = this;
+  dojo.place( _this.format_block( 'jstpl_domino', domino) , container);
+  dojo.query("#domino-" + domino.id ).forEach(function(oDomino){
+    dojo.connect(oDomino, 'onclick', function(ev){ _this.onClickDomino(domino.id); });
+  })
+  dojo.query("#domino-" + domino.id + " .square").forEach(function(square){
+    dojo.connect(square, 'onclick', function(ev){ _this.onClickDominoSquare(domino.id, square); });
+  })
+  dojo.query("#domino-" + domino.id + " .domino-types div").forEach(function(type){
+    dojo.connect(type, 'onclick', function(ev){ _this.onClickDominoType(domino.id, type); });
+  })
 },
 
 /*
@@ -460,8 +465,22 @@ onClickOverlay: function(x,y){
 
 
 notif_lawApplied: function(n){
+  var _this = this;
   debug("Notif: a law was applied", n.args);
   this.setBoard(n.args.board);
+
+  var dominoId = 'domino-' + n.args.domino.id;
+  if($(dominoId)){
+    if(dojo.attr(dominoId, 'data-location') == "board")
+      return;
+
+    this.slideDestroy($(dominoId), "dominos-player", 1000, 0).then(function(){
+      _this.addDomino(n.args.domino, 'dominos-player');
+    });
+  }
+  else {
+    _this.addDomino(n.args.domino, 'dominos-opponent');
+  }
 },
 
 
@@ -578,6 +597,16 @@ notif_pieceMoved: function(n){
    var _this = this;
    return new Promise(function (resolve, reject) {
      var animation = _this.slideTemporaryObject(_this.format_block(template, data), container, sourceId, targetId, duration, delay);
+     setTimeout(function(){
+       resolve();
+     }, duration + delay)
+   });
+ },
+
+ slideDestroy: function (node, to, duration, delay) {
+   var _this = this;
+   return new Promise(function (resolve, reject) {
+     var animation = _this.slideToObjectAndDestroy(node, to, duration, delay);
      setTimeout(function(){
        resolve();
      }, duration + delay)

@@ -73,6 +73,12 @@ class YinYangPlayer extends APP_GameClass
     return self::getObjectListFromDb("SELECT * FROM domino WHERE player_id = {$this->id}");
   }
 
+  public function getVisibleDominos($mine = true)
+  {
+    $op = $mine? "=" : "!=";
+    return self::getObjectListFromDb("SELECT * FROM domino WHERE player_id {$op} {$this->id} AND location = 'board'");
+  }
+
   public function getDominosInHand()
   {
     return self::getObjectListFromDb("SELECT * FROM domino WHERE player_id = {$this->id} AND location = 'hand'");

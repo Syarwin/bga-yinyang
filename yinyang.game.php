@@ -74,7 +74,9 @@ class yinyang extends Table
     $currentPlayerId = self::getCurrentPlayerId();
     return [
       'fplayers' => $this->playerManager->getUiData($currentPlayerId),
-			'board' => $this->board->getUiData(self::getCurrentPlayerId()),
+			'board' => $this->board->getUiData($currentPlayerId),
+			'player' => $this->playerManager->getPlayer($currentPlayerId)->getVisibleDominos(),
+			'opponent' => $this->playerManager->getPlayer($currentPlayerId)->getVisibleDominos(false),
 			'hand' => $this->playerManager->getPlayer($currentPlayerId)->getDominosInHand(),
     ];
   }
@@ -291,7 +293,7 @@ return 0.3;
 		$this->board->movePiece($piece, $pos);
 
 		$state = "endTurn";
-		if(is_null($this->log->getLastLaw()) && !empty($this->argApplyLaw()['dominos']))
+		if(is_null($this->log->getLastLaw()) && !empty($this->argApplyLaw()['_private']['active']['dominos']))
 			$state = "applyLaw";
 		$this->gamestate->nextState($state);
 	}

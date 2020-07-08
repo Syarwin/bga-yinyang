@@ -173,6 +173,8 @@ class YinYangBoard extends APP_GameClass
       self::DbQuery("UPDATE board SET piece = {$val} WHERE x = {$x} AND y = {$y}");
     }}
 
+    self::DbQuery("UPDATE domino SET location = 'board' WHERE id = {$domino['id']}");
+
     $this->game->log->addApplyLaw($domino, $pos);
     foreach($this->game->playerManager->getPlayers() as $player){
       $this->game->notifyPlayer($player->getId(), 'lawApplied', clienttranslate('${player_name} applied a law'), [
