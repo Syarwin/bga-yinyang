@@ -11,6 +11,7 @@ define('ST_START_OF_TURN', 4);
 
 define('ST_MOVE', 5);
 define('ST_APPLY_LAW', 6);
+define('ST_ADAPT', 9);
 
 define('ST_END_OF_TURN', 7);
 define('ST_PRE_END_OF_TURN', 8);

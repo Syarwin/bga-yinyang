@@ -83,6 +83,18 @@ class action_yinyang extends APP_GameAction
     self::ajaxResponse();
   }
 
+  public function adaptDomino()
+  {
+    self::setAjaxMode();
+    $dominoId = self::getArg( "dominoId", AT_posint, true );
+    $type = self::getArg("type", AT_alphanum, true);
+    $cause  = explode(',', self::getArg("cause", AT_numberlist, true ));
+    $effect = explode(',', self::getArg("effect", AT_numberlist, true ));
+    $this->game->adaptDomino($dominoId, $type, $cause, $effect);
+    self::ajaxResponse();
+  }
+
+
   public function movePiece()
   {
     self::setAjaxMode();

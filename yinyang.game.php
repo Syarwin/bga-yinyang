@@ -109,7 +109,7 @@ return 0.3;
 
 	public function updateDomino($dominoId, $type, $cause, $effect)
 	{
-		self::DbQuery("UPDATE domino SET type = '{$type}', cause00 = {$cause[0]}, cause01 = {$cause[1]}, cause10 = {$cause[2]}, cause11 = {$cause[3]}, effect00 = {$effect[0]}, effect01 = {$effect[1]}, effect10 = {$effect[2]}, effect11 = {$effect[3]} WHERE id = {$dominoId}");
+		self::DbQuery("UPDATE domino SET location = 'hand', type = '{$type}', cause00 = {$cause[0]}, cause01 = {$cause[1]}, cause10 = {$cause[2]}, cause11 = {$cause[3]}, effect00 = {$effect[0]}, effect01 = {$effect[1]}, effect10 = {$effect[2]}, effect11 = {$effect[3]} WHERE id = {$dominoId}");
 	}
 
 
@@ -172,30 +172,19 @@ return 0.3;
    */
   public function stCheckEndOfGame()
   {
-		return false;
+		foreach($this->playerManager->getPlayers() as $player){
+			$pos = ($player->getNo() == 1)? ['x' => 3, 'y' => 0] : ['x' => 0, 'y' => 3];
+			$piece = self::getObjectFromDB("SELECT piece FROM board WHERE x = {$pos['x']} AND y = {$pos['y']}");
+			if($piece['piece'] == $player->getNo()){
+	      self::notifyAllPlayers('message', clienttranslate('${player_name} wins!'), [
+	        'player_name' => $player->getName(),
+	      ]);
+		    self::DbQuery("UPDATE player SET player_score = 1 WHERE player_id = {$player->getId()}");
+		    $this->gamestate->nextState('endGame');
+			}
+		}
   }
 
-
-  /*
-   * announceWin: TODO
-   *
-  public function announceWin($playerId, $win = true)
-  {
-    $players = $win ? $this->playerManager->getTeammates($playerId) : $this->playerManager->getOpponents($playerId);
-    if (count($players) == 2) {
-      self::notifyAllPlayers('message', clienttranslate('${player_name} and ${player_name2} win!'), [
-        'player_name' => $players[0]->getName(),
-        'player_name2' => $players[1]->getName(),
-      ]);
-    } else {
-      self::notifyAllPlayers('message', clienttranslate('${player_name} wins!'), [
-        'player_name' => $players[0]->getName(),
-      ]);
-    }
-    self::DbQuery("UPDATE player SET player_score = 1 WHERE player_team = {$players[0]->getTeam()}");
-    $this->gamestate->nextState('endgame');
-  }
-*/
 
 	/*
 	 * cancelPreviousWorks: called when a player decide to go back at the beggining of the turn
@@ -263,15 +252,26 @@ return 0.3;
 		Utils::checkApplyLaw($arg, $dominoId, $pos);
 
 		$domino = self::getObjectFromDB("SELECT * FROM domino WHERE id = {$dominoId}");
-		if($domino['type'] != "adaptation"){
-			$this->board->applyLaw($domino, $pos);
-			$state = "endTurn";
-			if(is_null($this->log->getLastMove()) && !empty($this->argMovePiece()['pieces']))
-				$state = "movePiece";
-			$this->gamestate->nextState($state);
-		} else {
+		$this->board->applyLaw($domino, $pos);
 
-		}
+		$state = "endTurn";
+		if(is_null($this->log->getLastMove()) && !empty($this->argMovePiece()['pieces']))
+			$state = "movePiece";
+		if($domino['type'] == "adaptation")
+			$state = "adaptation";
+
+		$this->gamestate->nextState($state);
+	}
+
+
+	public function adaptDomino($dominoId, $type, $cause, $effect)
+	{
+		$this->board->adaptDomino($dominoId, $type, $cause, $effect);
+
+		$state = "endTurn";
+		if(is_null($this->log->getLastMove()) && !empty($this->argMovePiece()['pieces']))
+			$state = "movePiece";
+		$this->gamestate->nextState($state);
 	}
 
 

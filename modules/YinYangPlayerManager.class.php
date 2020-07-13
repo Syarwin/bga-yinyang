@@ -90,7 +90,7 @@ class YinYangPlayerManager extends APP_GameClass
   {
     $arg = ['_private' => []];
     foreach($this->getPlayers() as $player){
-      $arg['_private'][$player->getId()] = ['dominos' => $player->getDominosIdsInHand()];
+      $arg['_private'][$player->getId()] = ['dominos' => $player->getDominos()];
     }
 
     return $arg;

@@ -129,6 +129,11 @@ class YinYangLog extends APP_GameClass
     $this->insert(-1, $piece['id'], 'applyLaw', $args);
   }
 
+  public function addAdaptation($piece)
+  {
+    $this->insert(-1, $piece['id'], 'adaptation',[]);
+  }
+
 
   public function addMovePiece($piece, $to)
   {

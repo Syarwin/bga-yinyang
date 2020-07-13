@@ -38,7 +38,6 @@ constructor: function () {
  *  - mixed gamedatas : contains all datas retrieved by the getAllDatas PHP method.
  */
 setup: function (gamedatas) {
-  var _this = this;
   debug('SETUP', gamedatas);
 
   // Setup player's board
@@ -54,8 +53,8 @@ setup: function (gamedatas) {
   for(var j = 0; j < 4; j++){
     squares.push({x:i, y:j});
   }
-  squares.forEach(function(square){
-    dojo.connect($('square-' + square.x + "-" + square.y), 'onclick', function(ev){ _this.onClickSquare(square.x, square.y); });
+  squares.forEach(square => {
+    dojo.connect($('square-' + square.x + "-" + square.y), 'onclick', ev => this.onClickSquare(square.x, square.y));
   });
 
   // Setup overlay for applying laws
@@ -64,18 +63,18 @@ setup: function (gamedatas) {
   for(var j = 0; j < 3; j++){
     positions.push({x:i, y:j});
   }
-  positions.forEach(function(pos){
+  positions.forEach(pos => {
     var overlay = $('overlay-' + pos.x + "-" + pos.y);
-    dojo.connect(overlay, "onmouseenter", function(ev){  _this.onMouseEnterOverlay(pos.x, pos.y); });
-    dojo.connect(overlay, "onmouseout", function(ev){  _this.onMouseOutOverlay(); });
-    dojo.connect(overlay, "onclick", function(ev){  _this.onClickOverlay(pos.x, pos.y); });
+    dojo.connect(overlay, "onmouseenter", ev =>  this.onMouseEnterOverlay(pos.x, pos.y));
+    dojo.connect(overlay, "onmouseout", ev => this.onMouseOutOverlay());
+    dojo.connect(overlay, "onclick", ev => this.onClickOverlay(pos.x, pos.y));
   })
 
 
   // Setup dominos
-  gamedatas.hand.forEach(function(domino){  _this.addDomino(domino, 'player-private-hand');  });
-  gamedatas.player.forEach(function(domino){  _this.addDomino(domino, 'dominos-player');  });
-  gamedatas.opponent.forEach(function(domino){  _this.addDomino(domino, 'dominos-opponent');  });
+  gamedatas.hand.forEach(domino => this.addDomino(domino, 'player-private-hand'));
+  gamedatas.player.forEach(domino => this.addDomino(domino, 'dominos-player'));
+  gamedatas.opponent.forEach(domino => this.addDomino(domino, 'dominos-opponent'));
 
 
   // Handle for cancelled notification messages
@@ -93,17 +92,17 @@ setBoard: function(board){
   }
 },
 
-addDomino: function(domino, container){
-  var _this = this;
-  dojo.place( _this.format_block( 'jstpl_domino', domino) , container);
-  dojo.query("#domino-" + domino.id ).forEach(function(oDomino){
-    dojo.connect(oDomino, 'onclick', function(ev){ _this.onClickDomino(domino.id); });
+addDomino: function(domino, container, place){
+  place = place || "first";
+  dojo.place(this.format_block( 'jstpl_domino', domino) , container, place);
+  dojo.query("#domino-" + domino.id ).forEach(oDomino => {
+    dojo.connect(oDomino, 'onclick', ev => this.onClickDomino(domino.id));
   })
-  dojo.query("#domino-" + domino.id + " .square").forEach(function(square){
-    dojo.connect(square, 'onclick', function(ev){ _this.onClickDominoSquare(domino.id, square); });
+  dojo.query("#domino-" + domino.id + " .square").forEach(square => {
+    dojo.connect(square, 'onclick', ev => this.onClickDominoSquare(domino.id, square));
   })
-  dojo.query("#domino-" + domino.id + " .domino-types div").forEach(function(type){
-    dojo.connect(type, 'onclick', function(ev){ _this.onClickDominoType(domino.id, type); });
+  dojo.query("#domino-" + domino.id + " .domino-types div").forEach(type => {
+    dojo.connect(type, 'onclick', ev => this.onClickDominoType(domino.id, type));
   })
 },
 
@@ -125,7 +124,7 @@ onEnteringState: function (stateName, args) {
   }
 
   // Stop here if it's not the current player's turn for some states
-  if (["startOfTurn", "applyLaw", "movePiece"].includes(stateName) && !this.isCurrentPlayerActive()) return;
+  if (["startOfTurn", "applyLaw", "movePiece", "adaptDomino"].includes(stateName) && !this.isCurrentPlayerActive()) return;
 
   // Call appropriate method
   var methodName = "onEnteringState" + stateName.charAt(0).toUpperCase() + stateName.slice(1);
@@ -202,18 +201,17 @@ onEnteringStateConfirmTurn: function(args){
  * Add a timer to an action and trigger action when timer is done
  */
 startActionTimer: function (buttonId) {
-  var _this = this;
   if(!$(buttonId))
     return;
   this.actionTimerLabel = $(buttonId).innerHTML;
   this.actionTimerSeconds = 15;
-  this.actionTimerFunction = function () {
+  this.actionTimerFunction = () => {
     var button = $(buttonId);
     if (button == null) {
-      _this.stopActionTimer();
-    } else if (_this.actionTimerSeconds-- > 1) {
-      debug('Timer ' + buttonId + ' has ' + _this.actionTimerSeconds + ' seconds left');
-      button.innerHTML = _this.actionTimerLabel + ' (' + _this.actionTimerSeconds + ')';
+      this.stopActionTimer();
+    } else if (this.actionTimerSeconds-- > 1) {
+      debug('Timer ' + buttonId + ' has ' + this.actionTimerSeconds + ' seconds left');
+      button.innerHTML = this.actionTimerLabel + ' (' + this.actionTimerSeconds + ')';
     } else {
       debug('Timer ' + buttonId + ' execute');
       button.click();
@@ -277,19 +275,32 @@ onClickConfirm: function () {
 ////////////////////////////////
 
 onEnteringStateBuildDominos: function(args){
+  this._limit = null;
   this.makeDominosEditable(args._private.dominos);
 },
 
+onEnteringStateAdaptDomino: function(args){
+  this._limit = 1;
+  this.makeDominosEditable(args._private.dominos);
+},
+
+
+onClickCancelModifs: function(){
+  this.makeDominosEditable(this._editableDominos);
+},
 
 makeDominosEditable: function(dominos){
   if(!this.isCurrentPlayerActive())
     return;
 
   this._editableDominos = dominos;
-  dominos.forEach(function(dominoId){
-    dojo.addClass('domino-' + dominoId, 'editable');
+  this._confirm = false;
+  this._dominoId = null;
+  dominos.forEach(domino => {
+    this.addDomino(domino, 'domino-' + domino.id, 'replace');
+    dojo.addClass('domino-' + domino.id, 'editable');
   })
-  this.checkAllDominos();
+  this.checkAllDominos(false);
 },
 
 
@@ -299,7 +310,8 @@ onClickDominoSquare: function(dominoId, square){
 
   var token = parseInt(dojo.attr(square, 'data-token'));
   dojo.attr(square, 'data-token', (token + 1) % 3);
-  this.checkAllDominos();
+  this._dominoId = dominoId;
+  this.checkAllDominos(true);
 },
 
 onClickDominoType: function(dominoId, type){
@@ -307,13 +319,22 @@ onClickDominoType: function(dominoId, type){
     return;
 
   dojo.attr('domino-' + dominoId, 'data-type', type.className.substr(12));
-  this.checkAllDominos();
+  this._dominoId = dominoId;
+  this.checkAllDominos(true);
 },
 
-checkAllDominos: function(){
-  var _this = this;
+checkAllDominos: function(afterEvent){
   this.removeActionButtons();
-  if(this._editableDominos.reduce(function(carry, dominoId){ return carry && _this.checkDomino(dominoId); }, true))
+
+  if(afterEvent && this._limit == 1){
+    this.addActionButton('buttonCancelModifs', _('Cancel modifications'), 'onClickCancelModifs', null, false, 'gray');
+    this._editableDominos.forEach(domino => {
+      if(domino.id != this._dominoId)
+        dojo.removeClass('domino-' + domino.id, 'editable');
+    });
+  }
+
+  if(this._editableDominos.reduce((carry, domino) => carry && this.checkDomino(domino.id), true))
     this.addActionButton('buttonConfirmDominos', _('Confirm'), 'onClickConfirmDominos', null, false, 'blue');
 },
 
@@ -350,12 +371,17 @@ checkDomino: function(dominoId){
 
   if(okCause && okEffect){
     dojo.addClass(dom, 'valid');
-    this.ajaxcall("/yinyang/yinyang/updateDomino.html", {
+    var data = {
       dominoId: dominoId,
       type:type,
       cause:cause.join(','),
       effect:effect.join(','),
-    }, this, function(res){});
+    };
+
+    if(this._limit == 1 && this._confirm)
+      this.takeAction("adaptDomino", data);
+    if(this._limit != 1)
+      this.takeAction("updateDomino", data);
   }
   else
     dojo.removeClass(dom, 'valid');
@@ -371,9 +397,14 @@ checkDomino: function(dominoId){
 
 
 onClickConfirmDominos: function(){
-  this.takeAction("confirmDominos", {
-    playerId: this.getCurrentPlayerId(),
-  });
+  if(this._limit == 1 && this._dominoId != null){
+    this._confirm = true;
+    this.checkDomino(this._dominoId);
+  } else {
+    this.takeAction("confirmDominos", {
+      playerId: this.getCurrentPlayerId(),
+    });
+  }
   this.clearPossible();
 },
 
@@ -383,12 +414,11 @@ onClickConfirmDominos: function(){
 ////////  Start of turn  ///////
 ////////////////////////////////
 onEnteringStateStartOfTurn: function(args){
-  var _this = this;
   if(args._private.dominos && args._private.dominos.length > 0)
-    this.addActionButton('buttonApplyLaw', _('Apply law'), function(){ _this.takeAction('chooseApplyLaw'); }, null, false, 'blue');
+    this.addActionButton('buttonApplyLaw', _('Apply law'), () => this.takeAction('chooseApplyLaw'), null, false, 'blue');
 
   if(args.pieces && args.pieces.length > 0)
-    this.addActionButton('buttonMove', _('Move'), function(){ _this.takeAction('chooseMove'); }, null, false, 'blue');
+    this.addActionButton('buttonMove', _('Move'), () => this.takeAction('chooseMove'), null, false, 'blue');
 },
 
 
@@ -465,7 +495,6 @@ onClickOverlay: function(x,y){
 
 
 notif_lawApplied: function(n){
-  var _this = this;
   debug("Notif: a law was applied", n.args);
   this.setBoard(n.args.board);
 
@@ -474,15 +503,30 @@ notif_lawApplied: function(n){
     if(dojo.attr(dominoId, 'data-location') == "board")
       return;
 
-    this.slideDestroy($(dominoId), "dominos-player", 1000, 0).then(function(){
-      _this.addDomino(n.args.domino, 'dominos-player');
+    this.slideDestroy($(dominoId), "dominos-player", 1000, 0).then(() => {
+      this.addDomino(n.args.domino, 'dominos-player');
     });
   }
   else {
-    _this.addDomino(n.args.domino, 'dominos-opponent');
+    this.addDomino(n.args.domino, 'dominos-opponent');
   }
 },
 
+
+notif_dominoAdapted: function(n){
+  debug("Notif: a domino was adapted", n.args);
+
+  var dominoId = 'domino-' + n.args.dominoId;
+  if($(dominoId)){
+    var target = ($(dominoId).parentNode.id == "dominos-player")?  "player-private-hand" : "player_boards";
+    this.slideDestroy($(dominoId), target, 1000, 0);
+  }
+},
+
+
+notif_newDomino: function(n){
+  this.addDomino(n.args.domino, 'player-private-hand');
+},
 
 
 /////////////////////////////
@@ -506,7 +550,6 @@ makePiecesSelectable: function(){
 },
 
 onClickSquare: function(x,y){
-  var _this = this;
   if(!dojo.hasClass('square-' + x + "-" + y, 'selectable') || !this.isCurrentPlayerActive())
     return;
 
@@ -528,7 +571,7 @@ onClickSquare: function(x,y){
   dojo.query('.square').removeClass("selected selectable");
   dojo.addClass('square-' + x + "-" + y, 'selected');
 
-  this.addActionButton('buttonCancelSelectedPiece', _('Cancel'), function(){ _this.cancelSelectedPiece(); }, null, false, 'gray');
+  this.addActionButton('buttonCancelSelectedPiece', _('Cancel'), () =>  this.cancelSelectedPiece(), null, false, 'gray');
 
   piece.moves.forEach(function(move){
     dojo.addClass('square-' + move.x + "-" + move.y, "selectable");
@@ -564,8 +607,8 @@ notif_pieceMoved: function(n){
    this.removeActionButtons();
    this.onUpdateActionButtons(this.gamedatas.gamestate.name, this.gamedatas.gamestate.args);
 
-   this._editableDominos.forEach(function(dominoId){
-     dojo.removeClass('domino-' + dominoId, 'editable');
+   this._editableDominos.forEach(domino => {
+     dojo.removeClass('domino-' + domino.id, 'editable');
    });
    this._editableDominos = [];
 
@@ -594,9 +637,8 @@ notif_pieceMoved: function(n){
   * slideTemporary: a wrapper of slideTemporaryObject using Promise
   */
  slideTemporary: function (template, data, container, sourceId, targetId, duration, delay) {
-   var _this = this;
-   return new Promise(function (resolve, reject) {
-     var animation = _this.slideTemporaryObject(_this.format_block(template, data), container, sourceId, targetId, duration, delay);
+   return new Promise((resolve, reject) => {
+     var animation = this.slideTemporaryObject(this.format_block(template, data), container, sourceId, targetId, duration, delay);
      setTimeout(function(){
        resolve();
      }, duration + delay)
@@ -604,9 +646,8 @@ notif_pieceMoved: function(n){
  },
 
  slideDestroy: function (node, to, duration, delay) {
-   var _this = this;
-   return new Promise(function (resolve, reject) {
-     var animation = _this.slideToObjectAndDestroy(node, to, duration, delay);
+   return new Promise((resolve, reject) => {
+     var animation = this.slideToObjectAndDestroy(node, to, duration, delay);
      setTimeout(function(){
        resolve();
      }, duration + delay)
@@ -626,13 +667,14 @@ notif_pieceMoved: function(n){
  setupNotifications: function () {
    var notifs = [
      ['lawApplied', 1000],
+     ['dominoAdapted', 1000],
+     ['newDomino', 1],
      ['pieceMoved', 1000],
    ];
 
-   var _this = this;
-   notifs.forEach(function (notif) {
-     dojo.subscribe(notif[0], _this, "notif_" + notif[0]);
-     _this.notifqueue.setSynchronous(notif[0], notif[1]);
+   notifs.forEach(notif => {
+     dojo.subscribe(notif[0], this, "notif_" + notif[0]);
+     this.notifqueue.setSynchronous(notif[0], notif[1]);
    });
  }
 

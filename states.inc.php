@@ -37,7 +37,7 @@ $machinestates = [
     'action' => 'stBuildDominos',
     'transitions' => [
       'start' => ST_NEXT_PLAYER,
-      'endgame' => ST_GAME_END,
+      'endGame' => ST_GAME_END,
     ],
   ],
 
@@ -50,7 +50,7 @@ $machinestates = [
     'transitions' => [
       'next' => ST_NEXT_PLAYER,
       'start' => ST_START_OF_TURN,
-      'endgame' => ST_GAME_END,
+      'endGame' => ST_GAME_END,
     ],
     'updateGameProgression' => true,
   ],
@@ -98,11 +98,25 @@ $machinestates = [
     'possibleactions' => ['applyLaw', 'skip'],
     'transitions' => [
       'movePiece' => ST_MOVE,
+      'adaptation' => ST_ADAPT,
       'skip' => ST_PRE_END_OF_TURN,
       'endTurn' => ST_PRE_END_OF_TURN,
       'endGame' => ST_GAME_END,
     ],
   ],
+
+  ST_ADAPT => [
+    'name' => 'adaptDomino',
+    'description' => clienttranslate('${actplayer} may change one of its law'),
+    'descriptionmyturn' => clienttranslate('${you} may change one of your law'),
+    'type' => 'activeplayer',
+    'args' => 'argBuildDominos',
+    'transitions' => [
+      'movePiece' => ST_MOVE,
+      'endTurn' => ST_PRE_END_OF_TURN,
+    ],
+  ],
+
 
 
   ST_PRE_END_OF_TURN => [
@@ -127,7 +141,7 @@ $machinestates = [
     'action' => 'stEndOfTurn',
     'transitions' => [
       'next' => ST_NEXT_PLAYER,
-      'endgame' => ST_GAME_END,
+      'endGame' => ST_GAME_END,
     ],
   ],
 

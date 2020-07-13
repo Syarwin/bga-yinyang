@@ -161,17 +161,19 @@ class YinYangBoard extends APP_GameClass
 
   public function applyLaw($domino, $pos)
   {
-    for($i = 0; $i < 2; $i++){
-    for($j = 0; $j < 2; $j++){
-      $x = $i + (int) $pos['x'];
-      $y = $j + (int) $pos['y'];
-      if($this->flipped){
-        $x = 3 - $x;
-        $y = 3 - $y;
-      }
-      $val = $domino['effect'.$i.$j];
-      self::DbQuery("UPDATE board SET piece = {$val} WHERE x = {$x} AND y = {$y}");
-    }}
+    if($domino['type'] != "adaptation"){
+      for($i = 0; $i < 2; $i++){
+      for($j = 0; $j < 2; $j++){
+        $x = $i + (int) $pos['x'];
+        $y = $j + (int) $pos['y'];
+        if($this->flipped){
+          $x = 3 - $x;
+          $y = 3 - $y;
+        }
+        $val = $domino['effect'.$i.$j];
+        self::DbQuery("UPDATE board SET piece = {$val} WHERE x = {$x} AND y = {$y}");
+      }}
+    }
 
     self::DbQuery("UPDATE domino SET location = 'board' WHERE id = {$domino['id']}");
 
@@ -183,6 +185,21 @@ class YinYangBoard extends APP_GameClass
         'domino' => $domino,
       ]);
     }
+  }
+
+  public function adaptDomino($dominoId, $type, $cause, $effect)
+  {
+		self::DbQuery("UPDATE domino SET location = 'hand', type = '{$type}', cause00 = {$cause[0]}, cause01 = {$cause[1]}, cause10 = {$cause[2]}, cause11 = {$cause[3]}, effect00 = {$effect[0]}, effect01 = {$effect[1]}, effect10 = {$effect[2]}, effect11 = {$effect[3]} WHERE id = {$dominoId}");
+		$this->game->notifyAllPlayers('dominoAdapted', clienttranslate('${player_name} adapted a law'), [
+			'player_name' => $this->game->getActivePlayerName(),
+			'dominoId' => $dominoId,
+		]);
+
+		$domino = self::getObjectFromDB("SELECT * FROM domino WHERE id = {$dominoId}");
+    $this->game->notifyPlayer($domino['player_id'], 'newDomino', '', [
+      'domino' => $domino,
+    ]);
+    $this->game->log->addAdaptation($domino);
   }
 
 
