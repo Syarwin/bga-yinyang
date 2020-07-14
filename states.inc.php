@@ -77,12 +77,13 @@ $machinestates = [
     'descriptionmyturnskippable' => clienttranslate('${you} may move a piece'),
     'type' => 'activeplayer',
     'args' => 'argMovePiece',
-    'possibleactions' => ['movePiece', 'skip'],
+    'possibleactions' => ['movePiece', 'skip', 'cancel'],
     'transitions' => [
       'applyLaw' => ST_APPLY_LAW,
       'skip' => ST_PRE_END_OF_TURN,
       'endTurn' => ST_PRE_END_OF_TURN,
       'endGame' => ST_GAME_END,
+      'cancel'  => ST_START_OF_TURN,
     ],
   ],
 
@@ -95,13 +96,14 @@ $machinestates = [
     'descriptionmyturnskippable' => clienttranslate('${you} may apply a law'),
     'type' => 'activeplayer',
     'args' => 'argApplyLaw',
-    'possibleactions' => ['applyLaw', 'skip'],
+    'possibleactions' => ['applyLaw', 'skip', 'cancel'],
     'transitions' => [
       'movePiece' => ST_MOVE,
       'adaptation' => ST_ADAPT,
       'skip' => ST_PRE_END_OF_TURN,
       'endTurn' => ST_PRE_END_OF_TURN,
       'endGame' => ST_GAME_END,
+      'cancel'     => ST_START_OF_TURN,
     ],
   ],
 

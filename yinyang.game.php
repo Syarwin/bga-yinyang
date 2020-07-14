@@ -69,15 +69,16 @@ class yinyang extends Table
    *  Gather all informations about current game situation (visible by the current player).
    *  The method is called each time the game interface is displayed to a player, ie: when the game starts and when a player refreshes the game page (F5)
    */
-  protected function getAllDatas()
+  protected function getAllDatas($pId = null)
   {
-    $currentPlayerId = self::getCurrentPlayerId();
+    $currentPlayerId = $pId ?? self::getCurrentPlayerId();
     return [
       'fplayers' => $this->playerManager->getUiData($currentPlayerId),
 			'board' => $this->board->getUiData($currentPlayerId),
 			'player' => $this->playerManager->getPlayer($currentPlayerId)->getVisibleDominos(),
 			'opponent' => $this->playerManager->getPlayer($currentPlayerId)->getVisibleDominos(false),
 			'hand' => $this->playerManager->getPlayer($currentPlayerId)->getDominosInHand(),
+			'cancelMoveIds' => $this->log->getCancelMoveIds(),
     ];
   }
 
@@ -88,9 +89,7 @@ class yinyang extends Table
    */
   public function getGameProgression()
   {
-		// TODO
-//    return count($this->board->getPlacedPieces()) / 100;
-return 0.3;
+		return 50;
   }
 
 
@@ -173,7 +172,7 @@ return 0.3;
   public function stCheckEndOfGame()
   {
 		foreach($this->playerManager->getPlayers() as $player){
-			$pos = ($player->getNo() == 1)? ['x' => 3, 'y' => 0] : ['x' => 0, 'y' => 3];
+			$pos = ($player->getNo() == 1)? ['x' => 0, 'y' => 3] : ['x' => 3, 'y' => 0];
 			$piece = self::getObjectFromDB("SELECT piece FROM board WHERE x = {$pos['x']} AND y = {$pos['y']}");
 			if($piece['piece'] == $player->getNo()){
 	      self::notifyAllPlayers('message', clienttranslate('${player_name} wins!'), [
@@ -199,14 +198,13 @@ return 0.3;
 
 		// Undo the turn
 		$moveIds = $this->log->cancelTurn();
-		self::notifyAllPlayers('cancel', clienttranslate('${player_name} restarts their turn'), [
-			'player_name' => self::getActivePlayerName(),
-			'moveIds' => $moveIds,
-			'board' => $this->board->getUiData(),
-			'fplayers' => $this->playerManager->getUiData(self::getCurrentPlayerId()),
-		]);
+		foreach($this->playerManager->getPlayers() as $player){
+			$arg = $this->getAllDatas($player->getId());
+			$arg['player_name'] = self::getActivePlayerName();
+			$arg['moveIds'] = $moveIds;
+			self::notifyPlayer($player->getId(),'cancel', clienttranslate('${player_name} restarts their turn'), $arg);
+    }
 
-		// Apply power
 		$this->gamestate->nextState('cancel');
 	}
 
@@ -238,6 +236,7 @@ return 0.3;
 	public function argApplyLaw()
 	{
 		return [
+			'cancelable' => $this->log->getLastActions() != null,
 			'skippable' => !is_null($this->log->getLastMove()),
 			'_private' => [
 				'active' => $this->playerManager->getPlayer()->getPlayableLaws()

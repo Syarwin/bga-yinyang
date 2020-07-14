@@ -20,7 +20,18 @@
 var isDebug = true;
 var debug = isDebug ? console.info.bind(window.console) : function () { };
 define(["dojo", "dojo/_base/declare", "ebg/core/gamegui", "ebg/counter"], function (dojo, declare) {
+  function override_addMoveToLog(logId, moveId) {
+    // [Undocumented] Called by BGA framework on new log notification message
+    // Handle cancelled notifications
+    this.inherited(override_addMoveToLog, arguments);
+    if (this.gamedatas.cancelMoveIds && this.gamedatas.cancelMoveIds.includes(+moveId)) {
+      debug('Cancel notification message for move ID ' + moveId + ', log ID ' + logId);
+      dojo.addClass('log_' + logId, 'cancel');
+    }
+  }
+
   return declare("bgagame.yinyang", ebg.core.gamegui, {
+    addMoveToLog: override_addMoveToLog,
 
 /*
  * Constructor
@@ -76,10 +87,6 @@ setup: function (gamedatas) {
   gamedatas.player.forEach(domino => this.addDomino(domino, 'dominos-player'));
   gamedatas.opponent.forEach(domino => this.addDomino(domino, 'dominos-opponent'));
 
-
-  // Handle for cancelled notification messages
-  dojo.subscribe('addMoveToLog', this, 'yinyang_addMoveToLog');
-
   // Setup game notifications
   this.setupNotifications();
 },
@@ -95,9 +102,7 @@ setBoard: function(board){
 addDomino: function(domino, container, place){
   place = place || "first";
   dojo.place(this.format_block( 'jstpl_domino', domino) , container, place);
-  dojo.query("#domino-" + domino.id ).forEach(oDomino => {
-    dojo.connect(oDomino, 'onclick', ev => this.onClickDomino(domino.id));
-  })
+  dojo.connect($("domino-" + domino.id), 'onclick', ev => this.onClickDomino(domino.id));
   dojo.query("#domino-" + domino.id + " .square").forEach(square => {
     dojo.connect(square, 'onclick', ev => this.onClickDominoSquare(domino.id, square));
   })
@@ -124,7 +129,7 @@ onEnteringState: function (stateName, args) {
   }
 
   // Stop here if it's not the current player's turn for some states
-  if (["startOfTurn", "applyLaw", "movePiece", "adaptDomino"].includes(stateName) && !this.isCurrentPlayerActive()) return;
+  if (["startOfTurn", "applyLaw", "movePiece", "adaptDomino"].includes(stateName) && (!this.isCurrentPlayerActive())) return;
 
   // Call appropriate method
   var methodName = "onEnteringState" + stateName.charAt(0).toUpperCase() + stateName.slice(1);
@@ -158,6 +163,9 @@ onUpdateActionButtons: function (stateName, args, suppressTimers) {
   if (!this.isCurrentPlayerActive())
     return;
 
+  if (stateName == "buildDominos"){
+    this.checkAllDominos(false);
+  }
 
   if (stateName == "confirmTurn") {
     this.addActionButton('buttonConfirm', _('Confirm'), 'onClickConfirm', null, false, 'blue');
@@ -180,17 +188,6 @@ onUpdateActionButtons: function (stateName, args, suppressTimers) {
 ///////  Confirm/Cancel  ///////
 ////////////////////////////////
 ////////////////////////////////
-
-/*
- * addMoveToLog: called by BGA framework when a new notification message is logged.
- * cancel it immediately if needed.
- */
-yinyang_addMoveToLog: function (logId, moveId) {
-  if (this.gamedatas.cancelMoveIds && this.gamedatas.cancelMoveIds.includes(+moveId)) {
-    debug('Cancel notification message for move ID ' + moveId + ', log ID ' + logId);
-    dojo.addClass('log_' + logId, 'cancel');
-  }
-},
 
 onEnteringStateConfirmTurn: function(args){
   this.startActionTimer('buttonConfirm');
@@ -266,6 +263,33 @@ onClickConfirm: function () {
 },
 
 
+notif_cancel: function (n) {
+  debug('Notif: cancel turn', n.args);
+
+  // Reset board
+  this.setBoard(n.args.board);
+  // Setup dominos
+  dojo.query(".domino").forEach(dojo.destroy);
+  n.args.hand.forEach(domino => this.addDomino(domino, 'player-private-hand'));
+  n.args.player.forEach(domino => this.addDomino(domino, 'dominos-player'));
+  n.args.opponent.forEach(domino => this.addDomino(domino, 'dominos-opponent'));
+
+  this.cancelNotifications(n.args.moveIds);
+},
+
+/*
+ * cancelNotifications: cancel past notification log messages the given move IDs
+ */
+cancelNotifications: function (moveIds) {
+ for (var logId in this.log_to_move_id) {
+   var moveId = +this.log_to_move_id[logId];
+   if (moveIds.includes(moveId)) {
+     debug('Cancel notification message for move ID ' + moveId + ', log ID ' + logId);
+     dojo.addClass('log_' + logId, 'cancel');
+   }
+ }
+},
+
 
 
 ////////////////////////////////
@@ -334,11 +358,11 @@ checkAllDominos: function(afterEvent){
     });
   }
 
-  if(this._editableDominos.reduce((carry, domino) => carry && this.checkDomino(domino.id), true))
+  if(this._editableDominos.reduce((carry, domino) => carry && this.checkDomino(domino.id, afterEvent), true))
     this.addActionButton('buttonConfirmDominos', _('Confirm'), 'onClickConfirmDominos', null, false, 'blue');
 },
 
-checkDomino: function(dominoId){
+checkDomino: function(dominoId, afterEvent){
   var dom = "domino-" + dominoId;
   var type = dojo.attr(dom, 'data-type');
 
@@ -378,9 +402,9 @@ checkDomino: function(dominoId){
       effect:effect.join(','),
     };
 
-    if(this._limit == 1 && this._confirm)
+    if(this._limit == 1 && this._confirm && afterEvent)
       this.takeAction("adaptDomino", data);
-    if(this._limit != 1)
+    if(this._limit != 1 && afterEvent)
       this.takeAction("updateDomino", data);
   }
   else
@@ -399,7 +423,7 @@ checkDomino: function(dominoId){
 onClickConfirmDominos: function(){
   if(this._limit == 1 && this._dominoId != null){
     this._confirm = true;
-    this.checkDomino(this._dominoId);
+    this.checkDomino(this._dominoId, true);
   } else {
     this.takeAction("confirmDominos", {
       playerId: this.getCurrentPlayerId(),
@@ -517,15 +541,18 @@ notif_dominoAdapted: function(n){
   debug("Notif: a domino was adapted", n.args);
 
   var dominoId = 'domino-' + n.args.dominoId;
-  if($(dominoId)){
+  if($(dominoId) && $(dominoId).parentNode.id != "player-private-hand"){
     var target = ($(dominoId).parentNode.id == "dominos-player")?  "player-private-hand" : "player_boards";
-    this.slideDestroy($(dominoId), target, 1000, 0);
+    this.slideDestroy($(dominoId), target, 900, 0);
   }
 },
 
 
 notif_newDomino: function(n){
-  this.addDomino(n.args.domino, 'player-private-hand');
+  if($('domino-' + n.args.domino.id))
+    this.addDomino(n.args.domino, $('domino-' + n.args.domino.id), "replace");
+  else
+    this.addDomino(n.args.domino, 'player-private-hand');
 },
 
 
@@ -615,6 +642,7 @@ notif_pieceMoved: function(n){
    dojo.query('.overlay').removeClass("selectable");
    this._selectedDomino = null;
    dojo.query('.domino').removeClass("selected");
+   dojo.query('.domino').removeClass('selectable');
 
    dojo.query('.square').removeClass("selectable selected");
    this._selectedPiece = null;
@@ -666,10 +694,11 @@ notif_pieceMoved: function(n){
   */
  setupNotifications: function () {
    var notifs = [
-     ['lawApplied', 1000],
+     ['lawApplied', 1100],
      ['dominoAdapted', 1000],
      ['newDomino', 1],
      ['pieceMoved', 1000],
+     ['cancel', 10],
    ];
 
    notifs.forEach(notif => {

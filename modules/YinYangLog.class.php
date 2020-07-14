@@ -117,7 +117,11 @@ class YinYangLog extends APP_GameClass
    */
   public function startTurn()
   {
-    $this->insert(-1, 0, 'startTurn');
+    $this->game->board->flipped = false;
+    $this->insert(-1, 0, 'startTurn', [
+      'board' => $this->game->board->getBoard(),
+      'dominos' => self::getObjectListFromDb("SELECT * FROM domino")
+    ]);
   }
 
 
@@ -155,7 +159,7 @@ class YinYangLog extends APP_GameClass
   /*
    * getLastActions : get works and actions of player (used to cancel previous action)
    */
-  public function getLastActions($actions = ['build', 'usedPower', 'useTile'], $pId = null, $offset = null)
+  public function getLastActions($actions = ['applyLaw', 'movePiece'], $pId = null, $offset = null)
   {
     $pId = $pId ?? $this->game->getActivePlayerId();
     $offset = $offset ?? 0;
@@ -201,30 +205,17 @@ class YinYangLog extends APP_GameClass
     foreach ($logs as $log) {
       $args = json_decode($log['action_arg'], true);
 
-/*
-      switch($log['action']){
-        // Build : remove piece from board
-        case 'build':
-        case 'tileBuild':
-          self::DbQuery("UPDATE piece SET x = NULL, y = NULL, location = 'hand' WHERE id = {$log['piece_id']}");
-          break;
+      if($log['action'] == 'startTurn'){
+        for ($x = 0; $x < 4; $x++) {
+        for ($y = 0; $y < 4; $y++) {
+          self::DbQuery("UPDATE board SET piece = '{$args["board"][$x][$y]}' WHERE x = $x AND y = $y");
+        }}
 
-        // ObtainTile : put tile back on board
-        case 'obtainTile':
-          self::DbQuery("UPDATE piece SET location = 'board', player_id = NULL WHERE id = {$log['piece_id']}");
-          break;
-
-        // UseTile : put tile back in hand
-        case 'useTile':
-          self::DbQuery("UPDATE piece SET location = 'hand' WHERE id = {$log['piece_id']}");
-          break;
-
-        // move : move back
-        case 'move':
-          self::DbQuery("UPDATE piece SET x = {$args['from']['x']}, y = {$args['from']['y']} WHERE id = {$log['piece_id']}");
-          break;
+        foreach($args['dominos'] as $domino){
+          self::DbQuery("UPDATE domino SET location = '{$domino["location"]}', type = '{$domino["type"]}', cause00 = {$domino["cause00"]}, cause01 = {$domino["cause01"]}, cause10 = {$domino["cause10"]}, cause11 = {$domino["cause11"]},".
+           "effect00 = {$domino["effect00"]}, effect01 = {$domino["effect01"]}, effect10 = {$domino["effect10"]}, effect11 = {$domino["effect11"]} WHERE id = {$domino["id"]}");
+        }
       }
-*/
 
       // Undo statistics
       if (array_key_exists('stats', $args)) {

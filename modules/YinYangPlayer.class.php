@@ -89,7 +89,6 @@ class YinYangPlayer extends APP_GameClass
     return array_map(function($domino){ return $domino['id']; }, $this->getDominosInHand());
   }
 
-
   public function getPlayableLaws()
   {
     $this->game->board->flipped = $this->isFlipped();
@@ -97,6 +96,12 @@ class YinYangPlayer extends APP_GameClass
     $args = [
       'dominos' => $this->getDominos(),
     ];
+
+    $myDominos = $this->getVisibleDominos(true);
+    $oppDominos = $this->getVisibleDominos(false);
+    Utils::filter($args['dominos'], function($dom) use ($myDominos){  return YinYangBoard::isCompatible($dom, $myDominos, false); });
+    Utils::filter($args['dominos'], function($dom) use ($oppDominos){ return YinYangBoard::isCompatible($dom, $oppDominos, true); });
+
     foreach($args['dominos'] as &$domino){
       $domino['locations'] = $this->game->board->getAvailableLocations($domino);
     }
@@ -109,6 +114,7 @@ class YinYangPlayer extends APP_GameClass
     $this->game->board->flipped = $this->isFlipped();
 
     return [
+      'cancelable' => $this->game->log->getLastActions() != null,
       'pieces' => $this->game->board->getMovablePieces($this->no),
       'skippable' => !is_null($this->game->log->getLastLaw())
     ];
