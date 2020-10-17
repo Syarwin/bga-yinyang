@@ -48,6 +48,12 @@ class YinYangPlayer extends APP_GameClass
     }
 */
     self::DbQuery($sqlDominos . implode($values, ','));
+
+
+    $msg = $this->getNo() == 1? clienttranslate('${player_name} will play the black pieces') : clienttranslate('${player_name} will play the white pieces');
+    $this->game->notifyAllPlayers('message', $msg, [
+      'player_name' => $this->getName(),
+    ]);
   }
 
   public function isFlipped(){ return $this->no == 2; }

@@ -36,8 +36,17 @@ $machinestates = [
     'args' => 'argBuildDominos',
     'action' => 'stBuildDominos',
     'transitions' => [
-      'start' => ST_NEXT_PLAYER,
+      'start' => ST_START_PLAYING,
       'endGame' => ST_GAME_END,
+    ],
+  ],
+
+  ST_START_PLAYING => [
+    'name' => 'startPlaying',
+    'type' => 'game',
+    'action' => 'stStartPlaying',
+    'transitions' => [
+      '' => ST_START_OF_TURN,
     ],
   ],
 
@@ -98,7 +107,6 @@ $machinestates = [
     'args' => 'argApplyLaw',
     'possibleactions' => ['applyLaw', 'skip', 'cancel'],
     'transitions' => [
-      'movePiece' => ST_MOVE,
       'adaptation' => ST_ADAPT,
       'skip' => ST_PRE_END_OF_TURN,
       'endTurn' => ST_PRE_END_OF_TURN,
@@ -114,7 +122,6 @@ $machinestates = [
     'type' => 'activeplayer',
     'args' => 'argBuildDominos',
     'transitions' => [
-      'movePiece' => ST_MOVE,
       'endTurn' => ST_PRE_END_OF_TURN,
     ],
   ],

@@ -52,16 +52,19 @@ class yinyang extends Table
   protected function setupNewGame($players, $options = [])
   {
 		// Initialize board and cards
-//    $optionSetup = intval(self::getGameStateValue('optionSetup'));
 		$this->board->setupNewGame();
 
     // Initialize players
     $this->playerManager->setupNewGame($players);
 
-    // Active first player to play
+		// Active first player to play
     $pId = $this->activeNextPlayer();
     self::setGameStateInitialValue('firstPlayer', $pId);
     self::setGameStateInitialValue('currentRound', 0);
+
+		$this->notifyAllPlayers('message', clienttranslate('${player_name} will play first'), [
+      'player_name' => $this->getActivePlayerName(),
+    ]);
   }
 
   /*
@@ -109,6 +112,7 @@ class yinyang extends Table
 	public function updateDomino($dominoId, $type, $cause, $effect)
 	{
 		self::DbQuery("UPDATE domino SET location = 'hand', type = '{$type}', cause00 = {$cause[0]}, cause01 = {$cause[1]}, cause10 = {$cause[2]}, cause11 = {$cause[3]}, effect00 = {$effect[0]}, effect01 = {$effect[1]}, effect10 = {$effect[2]}, effect11 = {$effect[3]} WHERE id = {$dominoId}");
+		$this->notifyAllPlayers('message', '', []);
 	}
 
 
@@ -121,7 +125,11 @@ class yinyang extends Table
 		$this->gamestate->setPlayerNonMultiactive($playerId, 'start');
 	}
 
-
+	public function stStartPlaying()
+	{
+		$this->gamestate->changeActivePlayer(self::getGamestateValue("firstPlayer"));
+		$this->gamestate->nextState('');
+	}
 
   ////////////////////////////////////////////////
   ////////////   Next player / Win   ////////////
@@ -254,8 +262,6 @@ class yinyang extends Table
 		$this->board->applyLaw($domino, $pos);
 
 		$state = "endTurn";
-		if(is_null($this->log->getLastMove()) && !empty($this->argMovePiece()['pieces']))
-			$state = "movePiece";
 		if($domino['type'] == "adaptation")
 			$state = "adaptation";
 
@@ -266,11 +272,7 @@ class yinyang extends Table
 	public function adaptDomino($dominoId, $type, $cause, $effect)
 	{
 		$this->board->adaptDomino($dominoId, $type, $cause, $effect);
-
-		$state = "endTurn";
-		if(is_null($this->log->getLastMove()) && !empty($this->argMovePiece()['pieces']))
-			$state = "movePiece";
-		$this->gamestate->nextState($state);
+		$this->gamestate->nextState("endTurn");
 	}
 
 

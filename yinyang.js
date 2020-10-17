@@ -405,7 +405,7 @@ checkDomino: function(dominoId, afterEvent){
     if(this._limit == 1 && this._confirm && afterEvent)
       this.takeAction("adaptDomino", data);
     if(this._limit != 1 && afterEvent)
-      this.takeAction("updateDomino", data);
+      this.takeAction("updateDomino", data, false);
   }
   else
     dojo.removeClass(dom, 'valid');
@@ -653,9 +653,10 @@ notif_pieceMoved: function(n){
  /*
   * takeAction: default AJAX call with locked interface
   */
- takeAction: function (action, data, callback) {
+ takeAction: function (action, data, lock, callback) {
    data = data || {};
-   data.lock = true;
+   if(lock)
+    data.lock = true;
    callback = callback || function (res) { };
    this.ajaxcall("/yinyang/yinyang/" + action + ".html", data, this, callback);
  },
@@ -680,6 +681,20 @@ notif_pieceMoved: function(n){
        resolve();
      }, duration + delay)
    });
+ },
+
+
+ onScreenWidthChange: function () {
+   dojo.style('page-content', 'zoom', '');
+   dojo.style('page-title', 'zoom', '');
+   dojo.style('right-side-first-part', 'zoom', '');
+   let boardWidth = 1148;
+   let boardHeight = 708;
+   let box = $('yinyang-container').getBoundingClientRect();
+   let h = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0) - box.y;
+   let scale = Math.min(box['width'] / boardWidth, h / boardHeight);
+   dojo.style("fixed-width-container", "transform", "scale(" + scale + ")");
+   dojo.style('fixed-width-container', 'height', (708 * scale) + 'px');
  },
 
 

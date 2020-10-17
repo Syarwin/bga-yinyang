@@ -11,6 +11,11 @@
  *
  * YinYang stylesheet
  *
+ * fin de partie quand on ne peut plus jouer
+ * taille des dominos / plateau
+ * affichage lois incompatibles
+ * règles
+ * chrono début de partie
  */
 
  .notransition {
@@ -20,6 +25,19 @@
    transition: none !important;
  }
 
+div#yinyang-container {
+  display:flex;
+  align-items: center;
+  justify-content: center;
+}
+
+div#fixed-width-container {
+  width:1148px;
+  height:708px;
+  flex-shrink:0;
+  transform-origin: top center;
+}
+
 div#board {
   display:flex;
   justify-content: space-around;
@@ -27,7 +45,7 @@ div#board {
   flex-wrap:wrap;
 }
 div#dominos-player, div#dominos-opponent {
-  width:300px;
+  width:250px;
   height:100%;
   flex-shrink: 0;
   display:flex;
@@ -36,7 +54,7 @@ div#dominos-player, div#dominos-opponent {
 }
 
 div#dominos-player .domino, div#dominos-opponent .domino {
-  margin-bottom:20px;
+  margin-bottom:0px;
 }
 
 div#dominos-opponent > div.domino {
@@ -69,6 +87,10 @@ div#yinyang-grid div.square {
   border-bottom:1px solid black;
   position:relative;
   box-sizing: border-box;
+}
+div#yinyang-grid div#square-0-3, div#yinyang-grid div#square-3-0 {
+  background-image:linear-gradient(45deg, gray 10%, transparent 10%, transparent 50%, gray 50%, gray 60%, transparent 60%, transparent 100%);
+  background-size: 10px 10px;
 }
 
 div#yinyang-grid div#square-0-3,
@@ -181,19 +203,16 @@ div#yinyang-mask .square {
   justify-content: space-around;
   align-items: center;
   width:96%;
-  margin:40px auto;
+  margin:20px auto 0px;
   border-radius: 20px;
   background-color: rgba(255,255,255,0.4);
   padding:0px 0;
 }
 
-#player-private-hand .domino {
-  margin-top:30px;
-  margin-bottom:30px;
-}
 .domino {
-  width: 300px;
-  height: 100px;
+  width: 240px;
+  height: 80px;
+  margin:32px 0px;
   background-color:#e9cab7;
   box-shadow: 2px 2px 5px #333;
   display:flex;
@@ -210,8 +229,8 @@ div#yinyang-mask .square {
 .domino .domino-cause, .domino .domino-effect  {
   display: grid;
   box-sizing: border-box;
-  width:100px;
-  height:100px;
+  width:80px;
+  height:80px;
   grid-template-columns: repeat(2, 1fr);
   grid-template-rows: repeat(2, 1fr);
   border:1px solid black;
@@ -225,8 +244,8 @@ div#yinyang-mask .square {
 }
 
 .domino .domino-arrow {
-  width:100px;
-  height:100px;
+  width:80px;
+  height:80px;
   box-sizing: border-box;
   position:relative;
   display:flex;
@@ -242,9 +261,9 @@ div#yinyang-mask .square {
   display:block;
   width: 0;
   height: 0;
-  border-top: 20px solid transparent;
-  border-bottom: 20px solid transparent;
-  border-left: 40px solid black;
+  border-top: 16px solid transparent;
+  border-bottom: 16px solid transparent;
+  border-left: 32px solid black;
 }
 
 .domino  div.square {
@@ -258,13 +277,13 @@ div#yinyang-mask .square {
 .domino.selectable:hover div.square, .domino.selected div.square { border-color:#3faa5a; }
 
 .domino .domino-types {
-  width: 104px;
-  height: 36px;
+  width: 84px;
+  height: 29px;
   position: absolute;
   background-color: #e9cab7;
   z-index: -1;
   top: 0px;
-  left: 98px;
+  left: 78px;
   transition: top 1s;
   border: 1px solid black;
   display: grid;
@@ -272,7 +291,7 @@ div#yinyang-mask .square {
   grid-template-rows: 1fr;
   box-sizing: border-box;
 }
-.domino.editable .domino-types { top: -34px; }
+.domino.editable .domino-types { top: -26px; }
 
 
 .domino .domino-types div {

@@ -6,6 +6,7 @@
 define('ST_GAME_SETUP', 1);
 
 define('ST_BUILD_DOMINOS', 2);
+define('ST_START_PLAYING', 10);
 define('ST_NEXT_PLAYER', 3);
 define('ST_START_OF_TURN', 4);
 

@@ -53,6 +53,9 @@ class YinYangBoard extends APP_GameClass
 
   public static function compareCauses($a, $b, $flipped)
   {
+    if($a['id'] == $b['id'])
+      return false;
+
     if(!$flipped)
       return ($a['cause00'] == $b['cause00']) && ($a['cause01'] == $b['cause01']) && ($a['cause10'] == $b['cause10']) && ($a['cause11'] == $b['cause11']);
     else

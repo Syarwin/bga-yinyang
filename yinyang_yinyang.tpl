@@ -1,27 +1,31 @@
 {OVERALL_GAME_HEADER}
-<div id="board">
-  <div id="dominos-player"></div>
-  <div id="grid-container">
-    <div id="yinyang-grid">
-    <!-- BEGIN square -->
-       <div id="square-{X}-{Y}" class="square"></div>
-    <!-- END square -->
+<div id="yinyang-container">
+  <div id="fixed-width-container">
+    <div id="board">
+      <div id="dominos-player"></div>
+      <div id="grid-container">
+        <div id="yinyang-grid">
+        <!-- BEGIN square -->
+           <div id="square-{X}-{Y}" class="square"></div>
+        <!-- END square -->
+        </div>
+        <div id="yinyang-overlay">
+        <!-- BEGIN overlay -->
+           <div id="overlay-{X}-{Y}" class="overlay"></div>
+        <!-- END overlay -->
+        </div>
+        <div id="yinyang-mask">
+          <div class='square' data-token='1' data-x='0' data-y='0'></div>
+          <div class='square' data-token='0' data-x='0' data-y='1'></div>
+          <div class='square' data-token='2' data-x='1' data-y='0'></div>
+          <div class='square' data-token='1' data-x='1' data-y='1'></div>
+        </div>
+      </div>
+      <div id="dominos-opponent"></div>
     </div>
-    <div id="yinyang-overlay">
-    <!-- BEGIN overlay -->
-       <div id="overlay-{X}-{Y}" class="overlay"></div>
-    <!-- END overlay -->
-    </div>
-    <div id="yinyang-mask">
-      <div class='square' data-token='1' data-x='0' data-y='0'></div>
-      <div class='square' data-token='0' data-x='0' data-y='1'></div>
-      <div class='square' data-token='2' data-x='1' data-y='0'></div>
-      <div class='square' data-token='1' data-x='1' data-y='1'></div>
-    </div>
+    <div id="player-private-hand"></div>
   </div>
-  <div id="dominos-opponent"></div>
 </div>
-<div id="player-private-hand"></div>
 <script type="text/javascript">
 var jstpl_domino = `<div class='domino' data-type='\${type}' data-location='\${location}' id='domino-\${id}'>
   <div class="domino-types">
