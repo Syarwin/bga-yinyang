@@ -36,8 +36,9 @@ define(["dojo", "dojo/_base/declare", "ebg/core/gamegui", "ebg/counter"], functi
 /*
  * Constructor
  */
-constructor: function () {
+constructor () {
   this._editableDominos = [];
+  this.default_viewport = 'width=900, user-scalable=yes';
 },
 
 /*
@@ -48,14 +49,8 @@ constructor: function () {
  * Params :
  *  - mixed gamedatas : contains all datas retrieved by the getAllDatas PHP method.
  */
-setup: function (gamedatas) {
+setup (gamedatas) {
   debug('SETUP', gamedatas);
-
-  // Setup player's board
-  gamedatas.fplayers.forEach(function(player){
- //    dojo.place( _this.format_block( 'jstpl_player_panel', player) , 'overall_player_board_' + player.id );
- //    player.tiles.forEach(_this.addTile.bind(_this));
-  });
 
   // Setup board
   this.setBoard(gamedatas.board);
@@ -92,14 +87,14 @@ setup: function (gamedatas) {
 },
 
 
-setBoard: function(board){
+setBoard(board){
   for(var i = 0; i < 4; i++)
   for(var j = 0; j < 4; j++){
     dojo.attr('square-' + i + "-" + j, "data-token", board[i][j]);
   }
 },
 
-addDomino: function(domino, container, place){
+addDomino(domino, container, place){
   place = place || "first";
   dojo.place(this.format_block( 'jstpl_domino', domino) , container, place);
   dojo.connect($("domino-" + domino.id), 'onclick', ev => this.onClickDomino(domino.id));
@@ -118,7 +113,7 @@ addDomino: function(domino, container, place){
  *  - str stateName : name of the state we are entering
  *  - mixed args : additional information
  */
-onEnteringState: function (stateName, args) {
+onEnteringState (stateName, args) {
   debug('Entering state: ' + stateName, args);
 
   // Update gamestate description when skippable
@@ -146,7 +141,7 @@ onEnteringState: function (stateName, args) {
  * params:
  *  - str stateName : name of the state we are leaving
  */
-onLeavingState: function (stateName) {
+onLeavingState (stateName) {
   debug('Leaving state: ' + stateName);
   this.clearPossible();
 },
@@ -157,7 +152,7 @@ onLeavingState: function (stateName) {
  * 	called by BGA framework before onEnteringState
  *  in this method you can manage "action buttons" that are displayed in the action status bar (ie: the HTML links in the status bar).
  */
-onUpdateActionButtons: function (stateName, args, suppressTimers) {
+onUpdateActionButtons (stateName, args, suppressTimers) {
   debug('Update action buttons: ' + stateName, args); // Make sure it the player's turn
 
   if (!this.isCurrentPlayerActive())
@@ -189,7 +184,7 @@ onUpdateActionButtons: function (stateName, args, suppressTimers) {
 ////////////////////////////////
 ////////////////////////////////
 
-onEnteringStateConfirmTurn: function(args){
+onEnteringStateConfirmTurn(args){
   this.startActionTimer('buttonConfirm');
 },
 
@@ -197,7 +192,7 @@ onEnteringStateConfirmTurn: function(args){
 /*
  * Add a timer to an action and trigger action when timer is done
  */
-startActionTimer: function (buttonId) {
+startActionTimer (buttonId) {
   if(!$(buttonId))
     return;
   this.actionTimerLabel = $(buttonId).innerHTML;
@@ -219,7 +214,7 @@ startActionTimer: function (buttonId) {
   debug('Timer #' + this.actionTimerId + ' ' + buttonId + ' start');
 },
 
-stopActionTimer: function () {
+stopActionTimer() {
   if (this.actionTimerId != null) {
     debug('Timer #' + this.actionTimerId + ' stop');
     window.clearInterval(this.actionTimerId);
@@ -231,7 +226,7 @@ stopActionTimer: function () {
 /*
  * onClickSkip: is called when the active player decide to skip work
  */
-onClickSkip: function () {
+onClickSkip() {
   if (!this.checkAction('skip')) {
     return;
   }
@@ -243,7 +238,7 @@ onClickSkip: function () {
 /*
  * onClickCancel: is called when the active player decide to cancel previous works
  */
-onClickCancel: function () {
+onClickCancel() {
   if (!this.checkAction('cancel')) {
     return;
   }
@@ -255,7 +250,7 @@ onClickCancel: function () {
 /*
  * onClickConfirm: is called when the active player decide to confirm their turn
  */
-onClickConfirm: function () {
+onClickConfirm() {
   if (!this.checkAction('confirm')) {
     return;
   }
@@ -263,7 +258,7 @@ onClickConfirm: function () {
 },
 
 
-notif_cancel: function (n) {
+notif_cancel(n) {
   debug('Notif: cancel turn', n.args);
 
   // Reset board
@@ -280,7 +275,7 @@ notif_cancel: function (n) {
 /*
  * cancelNotifications: cancel past notification log messages the given move IDs
  */
-cancelNotifications: function (moveIds) {
+cancelNotifications(moveIds) {
  for (var logId in this.log_to_move_id) {
    var moveId = +this.log_to_move_id[logId];
    if (moveIds.includes(moveId)) {
@@ -298,22 +293,22 @@ cancelNotifications: function (moveIds) {
 ////////////////////////////////
 ////////////////////////////////
 
-onEnteringStateBuildDominos: function(args){
+onEnteringStateBuildDominos(args){
   this._limit = null;
   this.makeDominosEditable(args._private.dominos);
 },
 
-onEnteringStateAdaptDomino: function(args){
+onEnteringStateAdaptDomino(args){
   this._limit = 1;
   this.makeDominosEditable(args._private.dominos);
 },
 
 
-onClickCancelModifs: function(){
+onClickCancelModifs(){
   this.makeDominosEditable(this._editableDominos);
 },
 
-makeDominosEditable: function(dominos){
+makeDominosEditable(dominos){
   if(!this.isCurrentPlayerActive())
     return;
 
@@ -328,7 +323,7 @@ makeDominosEditable: function(dominos){
 },
 
 
-onClickDominoSquare: function(dominoId, square){
+onClickDominoSquare(dominoId, square){
   if(!dojo.hasClass('domino-' + dominoId, 'editable') || !this.isCurrentPlayerActive())
     return;
 
@@ -338,7 +333,7 @@ onClickDominoSquare: function(dominoId, square){
   this.checkAllDominos(true);
 },
 
-onClickDominoType: function(dominoId, type){
+onClickDominoType(dominoId, type){
   if(!dojo.hasClass('domino-' + dominoId, 'editable'))
     return;
 
@@ -347,7 +342,7 @@ onClickDominoType: function(dominoId, type){
   this.checkAllDominos(true);
 },
 
-checkAllDominos: function(afterEvent){
+checkAllDominos(afterEvent){
   this.removeActionButtons();
 
   if(afterEvent && this._limit == 1){
@@ -362,12 +357,12 @@ checkAllDominos: function(afterEvent){
     this.addActionButton('buttonConfirmDominos', _('Confirm'), 'onClickConfirmDominos', null, false, 'blue');
 },
 
-checkDomino: function(dominoId, afterEvent){
+checkDomino(dominoId, afterEvent){
   var dom = "domino-" + dominoId;
   var type = dojo.attr(dom, 'data-type');
 
-  var cause = dojo.query("#"+dom + " .domino-cause div").map(function(square){ return dojo.attr(square, 'data-token'); });
-  var effect = dojo.query("#"+dom + " .domino-effect div").map(function(square){ return dojo.attr(square, 'data-token'); });
+  var cause = dojo.query("#"+dom + " .domino-cause div").map(square => dojo.attr(square, 'data-token'));
+  var effect = dojo.query("#"+dom + " .domino-effect div").map(square => dojo.attr(square, 'data-token'));
 
   var okCause = true, okEffect = true;
   var nCause = 0, nEffect = 0, newEffect = 0, newCause = 0, diff = 0;
@@ -420,7 +415,7 @@ checkDomino: function(dominoId, afterEvent){
 },
 
 
-onClickConfirmDominos: function(){
+onClickConfirmDominos(){
   if(this._limit == 1 && this._dominoId != null){
     this._confirm = true;
     this.checkDomino(this._dominoId, true);
@@ -437,7 +432,7 @@ onClickConfirmDominos: function(){
 ////////////////////////////////
 ////////  Start of turn  ///////
 ////////////////////////////////
-onEnteringStateStartOfTurn: function(args){
+onEnteringStateStartOfTurn(args){
   if(args._private.dominos && args._private.dominos.length > 0)
     this.addActionButton('buttonApplyLaw', _('Apply law'), () => this.takeAction('chooseApplyLaw'), null, false, 'blue');
 
@@ -453,43 +448,49 @@ onEnteringStateStartOfTurn: function(args){
 /////////////////////////////
 /////////////////////////////
 
-onEnteringStateApplyLaw: function(args){
+onEnteringStateApplyLaw(args){
   this._selectableDominos = args._private.dominos;
   this.makeDominosSelectable();
   dojo.style("yinyang-overlay", "display", "grid");
   dojo.style("yinyang-mask", "display", "grid");
 },
 
-makeDominosSelectable: function(){
-  this._selectableDominos.forEach(function(domino){
-    dojo.addClass('domino-' + domino.id, 'selectable');
+makeDominosSelectable(){
+  dojo.query(".domino").addClass("unselectable");
+  this._selectableDominos.forEach(domino => {
+    if(domino.compatible){
+      dojo.removeClass('domino-' + domino.id, 'unselectable');
+      dojo.addClass('domino-' + domino.id, 'selectable');
+    } else {
+      this.addTooltip('domino-' + domino.id, _("Uncompatible law"), '');
+    }
   });
 },
 
-onClickDomino: function(dominoId){
+onClickDomino(dominoId){
   if(!dojo.hasClass('domino-' + dominoId, 'selectable') || !this.isCurrentPlayerActive())
     return;
 
-  var domino = this._selectableDominos.find(function(elem){ return elem.id == dominoId; });
+  var domino = this._selectableDominos.find(elem => elem.id == dominoId);
   if(!domino)
     return;
   this._selectedDomino = domino;
   dojo.query('.domino').removeClass("selected");
   dojo.addClass('domino-' + domino.id, 'selected');
 
-  dojo.query('#yinyang-mask .square').forEach(function(square){
+  dojo.query('#yinyang-mask .square').forEach(square => {
     var x = dojo.attr(square, "data-x"), y = dojo.attr(square, "data-y");
     dojo.attr(square, "data-token", domino.type == "adaptation"? domino['cause'+x+y] : domino['effect'+x+y]);
   })
 
   dojo.query('.overlay').removeClass("selectable");
-  domino.locations.forEach(function(location){
+  domino.locations.forEach(location => {
     dojo.addClass('overlay-' + location.x + "-" + location.y, "selectable");
   });
 },
 
 
-onMouseEnterOverlay: function(x,y){
+onMouseEnterOverlay(x,y){
   if(!dojo.hasClass('overlay-' + x + "-" + y, 'selectable') || !this.isCurrentPlayerActive())
     return;
 
@@ -498,7 +499,7 @@ onMouseEnterOverlay: function(x,y){
   dojo.style('yinyang-mask', 'left', (21 + 124*y) + "px");
 },
 
-onMouseOutOverlay: function(){
+onMouseOutOverlay(){
   dojo.addClass("yinyang-mask", 'notransition');
   dojo.style("yinyang-mask", "opacity", 0);
   $("yinyang-mask").offsetHeight;
@@ -506,7 +507,7 @@ onMouseOutOverlay: function(){
 },
 
 
-onClickOverlay: function(x,y){
+onClickOverlay(x,y){
   if(!dojo.hasClass('overlay-' + x + "-" + y, 'selectable') || !this.isCurrentPlayerActive())
     return;
 
@@ -518,7 +519,7 @@ onClickOverlay: function(x,y){
 },
 
 
-notif_lawApplied: function(n){
+notif_lawApplied(n){
   debug("Notif: a law was applied", n.args);
   this.setBoard(n.args.board);
 
@@ -537,7 +538,7 @@ notif_lawApplied: function(n){
 },
 
 
-notif_dominoAdapted: function(n){
+notif_dominoAdapted(n){
   debug("Notif: a domino was adapted", n.args);
 
   var dominoId = 'domino-' + n.args.dominoId;
@@ -548,7 +549,7 @@ notif_dominoAdapted: function(n){
 },
 
 
-notif_newDomino: function(n){
+notif_newDomino(n){
   if($('domino-' + n.args.domino.id))
     this.addDomino(n.args.domino, $('domino-' + n.args.domino.id), "replace");
   else
@@ -562,7 +563,7 @@ notif_newDomino: function(n){
 /////////////////////////////
 /////////////////////////////
 
-onEnteringStateMovePiece: function(args){
+onEnteringStateMovePiece(args){
   this._selectablePieces = args.pieces;
   this._selectedPiece = null;
   this.makePiecesSelectable();
@@ -570,13 +571,13 @@ onEnteringStateMovePiece: function(args){
   dojo.style("yinyang-mask", "display", "none");
 },
 
-makePiecesSelectable: function(){
-  this._selectablePieces.forEach(function(piece){
+makePiecesSelectable(){
+  this._selectablePieces.forEach(piece => {
     dojo.addClass('square-' + piece.x + '-' + piece.y, 'selectable');
   });
 },
 
-onClickSquare: function(x,y){
+onClickSquare(x,y){
   if(!dojo.hasClass('square-' + x + "-" + y, 'selectable') || !this.isCurrentPlayerActive())
     return;
 
@@ -591,7 +592,7 @@ onClickSquare: function(x,y){
   }
 
   // Make the piece selected and highlight available spaces
-  var piece = this._selectablePieces.find(function(elem){ return elem.x == x && elem.y == y; });
+  var piece = this._selectablePieces.find(elem => elem.x == x && elem.y == y);
   if(!piece)
     return;
   this._selectedPiece = piece;
@@ -600,12 +601,12 @@ onClickSquare: function(x,y){
 
   this.addActionButton('buttonCancelSelectedPiece', _('Cancel'), () =>  this.cancelSelectedPiece(), null, false, 'gray');
 
-  piece.moves.forEach(function(move){
+  piece.moves.forEach(move => {
     dojo.addClass('square-' + move.x + "-" + move.y, "selectable");
   });
 },
 
-cancelSelectedPiece: function(){
+cancelSelectedPiece(){
   this._selectedPiece = null;
   dojo.query('.square').removeClass("selectable selected");
   this.removeActionButtons();
@@ -614,7 +615,7 @@ cancelSelectedPiece: function(){
   this.makePiecesSelectable();
 },
 
-notif_pieceMoved: function(n){
+notif_pieceMoved(n){
   debug("Notif: a law was applied", n.args);
   this.setBoard(n.args.board);
 },
@@ -630,7 +631,7 @@ notif_pieceMoved: function(n){
  /*
   * clearPossible:	clear every clickable space
   */
- clearPossible: function clearPossible() {
+ clearPossible() {
    this.removeActionButtons();
    this.onUpdateActionButtons(this.gamedatas.gamestate.name, this.gamedatas.gamestate.args);
 
@@ -643,6 +644,8 @@ notif_pieceMoved: function(n){
    this._selectedDomino = null;
    dojo.query('.domino').removeClass("selected");
    dojo.query('.domino').removeClass('selectable');
+   dojo.query('.domino').removeClass('unselectable');
+   dojo.query('.domino').forEach(domino => this.removeTooltip(domino.id));
 
    dojo.query('.square').removeClass("selectable selected");
    this._selectedPiece = null;
@@ -653,7 +656,7 @@ notif_pieceMoved: function(n){
  /*
   * takeAction: default AJAX call with locked interface
   */
- takeAction: function (action, data, lock, callback) {
+ takeAction (action, data, lock, callback) {
    data = data || {};
    if(lock)
     data.lock = true;
@@ -665,7 +668,7 @@ notif_pieceMoved: function(n){
  /*
   * slideTemporary: a wrapper of slideTemporaryObject using Promise
   */
- slideTemporary: function (template, data, container, sourceId, targetId, duration, delay) {
+ slideTemporary (template, data, container, sourceId, targetId, duration, delay) {
    return new Promise((resolve, reject) => {
      var animation = this.slideTemporaryObject(this.format_block(template, data), container, sourceId, targetId, duration, delay);
      setTimeout(function(){
@@ -674,7 +677,7 @@ notif_pieceMoved: function(n){
    });
  },
 
- slideDestroy: function (node, to, duration, delay) {
+ slideDestroy (node, to, duration, delay) {
    return new Promise((resolve, reject) => {
      var animation = this.slideToObjectAndDestroy(node, to, duration, delay);
      setTimeout(function(){
@@ -684,7 +687,7 @@ notif_pieceMoved: function(n){
  },
 
 
- onScreenWidthChange: function () {
+ onScreenWidthChange () {
    dojo.style('page-content', 'zoom', '');
    dojo.style('page-title', 'zoom', '');
    dojo.style('right-side-first-part', 'zoom', '');
@@ -707,7 +710,7 @@ notif_pieceMoved: function(n){
   *  In this method, you associate each of your game notifications with your local method to handle it.
   *	Note: game notification names correspond to "notifyAllPlayers" and "notifyPlayer" in the santorini.game.php file.
   */
- setupNotifications: function () {
+ setupNotifications () {
    var notifs = [
      ['lawApplied', 1100],
      ['dominoAdapted', 1000],

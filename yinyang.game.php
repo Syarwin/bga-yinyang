@@ -101,6 +101,8 @@ class yinyang extends Table
 	////////////////////////////////////
 	public function stBuildDominos()
 	{
+    foreach($this->playerManager->getPlayers() as $player)
+      $this->giveExtraTime($player->getId(), 500);
 		$this->gamestate->setAllPlayersMultiactive();
 	}
 

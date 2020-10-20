@@ -202,7 +202,7 @@ div#yinyang-mask .square {
   flex-direction: row;
   justify-content: space-around;
   align-items: center;
-  width:96%;
+  width:98%;
   margin:20px auto 0px;
   border-radius: 20px;
   background-color: rgba(255,255,255,0.4);
@@ -220,6 +220,12 @@ div#yinyang-mask .square {
   position:relative;
   z-index:2;
 }
+.domino.unselectable {
+  opacity: 0.4;
+  cursor:not-allowed;
+}
+.domino.unselectable:hover .domino-arrow, .domino.unselectable:hover .domino-cause, .domino.unselectable:hover .domino-effect { border-color:red; }
+
 .domino.selectable {
   background-color:#ddc7b9;
   cursor:pointer;

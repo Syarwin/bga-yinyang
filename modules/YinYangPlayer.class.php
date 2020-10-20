@@ -105,13 +105,12 @@ class YinYangPlayer extends APP_GameClass
 
     $myDominos = $this->getVisibleDominos(true);
     $oppDominos = $this->getVisibleDominos(false);
-    Utils::filter($args['dominos'], function($dom) use ($myDominos){  return YinYangBoard::isCompatible($dom, $myDominos, false); });
-    Utils::filter($args['dominos'], function($dom) use ($oppDominos){ return YinYangBoard::isCompatible($dom, $oppDominos, true); });
-
     foreach($args['dominos'] as &$domino){
       $domino['locations'] = $this->game->board->getAvailableLocations($domino);
+      $domino['compatible'] = YinYangBoard::isCompatible($domino, $myDominos, false) && YinYangBoard::isCompatible($domino, $oppDominos, true);
     }
     Utils::cleanDominos($args);
+
     return $args;
   }
 
