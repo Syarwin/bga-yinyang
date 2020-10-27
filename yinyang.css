@@ -88,6 +88,18 @@ div#yinyang-grid div.square {
   position:relative;
   box-sizing: border-box;
 }
+div#yinyang-grid div.square.highlight {
+  animation: fade 3s;
+}
+@keyframes fade {
+  0% {
+    background-color:blue;
+  }
+  100% {
+    background-color:transparent;
+  }
+}
+
 div#yinyang-grid div#square-0-3, div#yinyang-grid div#square-3-0 {
   background-image:linear-gradient(45deg, gray 10%, transparent 10%, transparent 50%, gray 50%, gray 60%, transparent 60%, transparent 100%);
   background-size: 10px 10px;
@@ -220,6 +232,22 @@ div#yinyang-mask .square {
   position:relative;
   z-index:2;
 }
+.domino.highlight {
+  animation: pulse 2s;
+  animation-iteration-count: 4;
+}
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 4px blue;
+  }
+  50% {
+    box-shadow: 0 0 0 12px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 12px transparent;
+  }
+}
+
 .domino.unselectable {
   opacity: 0.4;
   cursor:not-allowed;
@@ -245,7 +273,11 @@ div#yinyang-mask .square {
 .domino.selected .domino-cause, .domino.selected .domino-effect { border-color:#3faa5a;}
 
 
-.domino .domino-cause.invalid, .domino .domino-effect.invalid  {
+.domino .domino-cause.invalid, .domino .domino-effect.invalid{
+  background-color:rgba(255,0,0,0.1);
+  border:1px solid red;
+}
+.domino .invalid .square  {
   border:1px solid red;
 }
 
@@ -260,6 +292,9 @@ div#yinyang-mask .square {
   border-top:2px solid black;
   border-bottom:2px solid black;
   background-color:#e9cab7;
+}
+.domino.selectable:hover {
+  box-shadow:none;
 }
 .domino.selectable:hover .domino-arrow, .domino.selected .domino-arrow { border-color:#3faa5a; }
 .domino .domino-arrow::before {

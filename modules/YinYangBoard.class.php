@@ -199,8 +199,10 @@ class YinYangBoard extends APP_GameClass
     foreach($this->game->playerManager->getPlayers() as $player){
       $this->game->notifyPlayer($player->getId(), 'lawApplied', clienttranslate('${player_name} applied a law'), [
         'player_name' => $this->game->getActivePlayerName(),
+        'pId' => $this->game->getActivePlayerId(),
         'board' => $this->getBoard($player->isFlipped()),
         'domino' => $domino,
+        'pos' => $pos,
       ]);
     }
   }
@@ -233,7 +235,10 @@ class YinYangBoard extends APP_GameClass
     foreach($this->game->playerManager->getPlayers() as $player){
       $this->game->notifyPlayer($player->getId(), 'pieceMoved', clienttranslate('${player_name} moved a piece'), [
         'player_name' => $this->game->getActivePlayerName(),
+        'pId' => $this->game->getActivePlayerId(),
         'board' => $this->getBoard($player->isFlipped()),
+        'piece' => $piece,
+        'pos' => $pos,
       ]);
     }
   }

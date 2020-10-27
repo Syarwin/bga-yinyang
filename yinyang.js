@@ -82,6 +82,21 @@ setup (gamedatas) {
   gamedatas.player.forEach(domino => this.addDomino(domino, 'dominos-player'));
   gamedatas.opponent.forEach(domino => this.addDomino(domino, 'dominos-opponent'));
 
+  // Highlight last action
+  if(gamedatas.action){
+    setTimeout( () => {
+      if(gamedatas.action.action == "applyLaw"){
+        this.highlightDomino("domino-" + gamedatas.action.domino_id);
+        let zone = gamedatas.action.action_arg.to;
+        this.highlightZone(zone.x, zone.y, gamedatas.action.player_id != this.player_id);
+      } else if(gamedatas.action.action == "movePiece"){
+        let arg = gamedatas.action.action_arg;
+        this.highlightSquare(arg.from.x, arg.from.y, gamedatas.action.player_id != this.player_id);
+        this.highlightSquare(arg.to.x, arg.to.y, gamedatas.action.player_id != this.player_id);
+      }
+
+    }, 2000);
+  }
   // Setup game notifications
   this.setupNotifications();
 },
@@ -522,18 +537,23 @@ onClickOverlay(x,y){
 notif_lawApplied(n){
   debug("Notif: a law was applied", n.args);
   this.setBoard(n.args.board);
+  this.highlightZone(n.args.pos.x, n.args.pos.y, n.args.pId != this.player_id);
 
   var dominoId = 'domino-' + n.args.domino.id;
   if($(dominoId)){
-    if(dojo.attr(dominoId, 'data-location') == "board")
+    if(dojo.attr(dominoId, 'data-location') == "board"){
+      this.highlightDomino(dominoId);
       return;
+    }
 
     this.slideDestroy($(dominoId), "dominos-player", 1000, 0).then(() => {
       this.addDomino(n.args.domino, 'dominos-player');
+      this.highlightDomino(dominoId);
     });
   }
   else {
     this.addDomino(n.args.domino, 'dominos-opponent');
+    this.highlightDomino(dominoId);
   }
 },
 
@@ -618,6 +638,9 @@ cancelSelectedPiece(){
 notif_pieceMoved(n){
   debug("Notif: a law was applied", n.args);
   this.setBoard(n.args.board);
+
+  this.highlightSquare(n.args.piece.x, n.args.piece.y, n.args.pId != this.player_id);
+  this.highlightSquare(n.args.pos.x, n.args.pos.y, n.args.pId != this.player_id);
 },
 
 
@@ -700,6 +723,32 @@ notif_pieceMoved(n){
    dojo.style('fixed-width-container', 'height', (708 * scale) + 'px');
  },
 
+
+ highlightElem(id){
+   let elem = $(id);
+   if(!elem){
+     console.log(id);
+     return;
+   }
+   dojo.removeClass(elem, "highlight");
+   elem.offsetWidth;
+   dojo.addClass(elem, "highlight");
+ },
+ highlightDomino(id){
+   this.highlightElem(id);
+ },
+ highlightSquare(x,y, flip){
+   let xx = flip ? (3 - x) : parseInt(x);
+   let yy = flip ? (3 - y) : parseInt(y);
+   this.highlightElem("square-" + xx + "-" + yy);
+ },
+ highlightZone(x,y, flip){
+   let xx = flip ? (2 - x) : parseInt(x);
+   let yy = flip ? (2 - y) : parseInt(y);
+   for(var i = 0; i < 2; i++)
+   for(var j = 0; j < 2; j++)
+    this.highlightSquare(xx + i, yy + j);
+ },
 
  ///////////////////////////////////////////////////
  //////   Reaction to cometD notifications   ///////

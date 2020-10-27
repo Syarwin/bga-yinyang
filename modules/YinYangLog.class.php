@@ -186,6 +186,13 @@ class YinYangLog extends APP_GameClass
     return $this->getLastAction('applyLaw');
   }
 
+  public function getLastLog()
+  {
+    $action = self::getObjectFromDB("SELECT * FROM log WHERE `action` IN ('applyLaw', 'movePiece') ORDER BY log_id DESC LIMIT 1");
+    if(!is_null($action))
+      $action['action_arg'] = json_decode($action['action_arg'], true);
+    return $action;
+  }
 
 ////////////////////////////////
 ////////////////////////////////

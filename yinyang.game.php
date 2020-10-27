@@ -82,6 +82,7 @@ class yinyang extends Table
 			'opponent' => $this->playerManager->getPlayer($currentPlayerId)->getVisibleDominos(false),
 			'hand' => $this->playerManager->getPlayer($currentPlayerId)->getDominosInHand(),
 			'cancelMoveIds' => $this->log->getCancelMoveIds(),
+      'action' => $this->log->getLastLog(),
     ];
   }
 
@@ -158,6 +159,11 @@ class yinyang extends Table
   public function stStartOfTurn()
   {
     $this->log->startTurn();
+    $arg = $this->argStartOfTurn();
+    if(empty($arg['_private']['dominos']) && empty($arg['pieces'])){
+      self::DbQuery("UPDATE player SET player_score = 1 WHERE player_id != ". self::getActivePlayerId());
+      $this->gamestate->nextState('endGame');
+    }
   }
 
 	public function argStartOfTurn()
