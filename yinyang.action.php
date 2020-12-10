@@ -83,6 +83,13 @@ class action_yinyang extends APP_GameAction
     self::ajaxResponse();
   }
 
+  public function passAdapt()
+  {
+    self::setAjaxMode();
+    $this->game->gamestate->nextState('endTurn');
+    self::ajaxResponse();
+  }
+
   public function adaptDomino()
   {
     self::setAjaxMode();

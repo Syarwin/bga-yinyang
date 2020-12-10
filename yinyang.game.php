@@ -83,6 +83,7 @@ class yinyang extends Table
 			'hand' => $this->playerManager->getPlayer($currentPlayerId)->getDominosInHand(),
 			'cancelMoveIds' => $this->log->getCancelMoveIds(),
       'action' => $this->log->getLastLog(),
+      'players' => self::getCollectionFromDB( "SELECT player_id id, player_name name, player_score score, player_no no FROM player"),
     ];
   }
 
@@ -115,7 +116,10 @@ class yinyang extends Table
 	public function updateDomino($dominoId, $type, $cause, $effect)
 	{
 		self::DbQuery("UPDATE domino SET location = 'hand', type = '{$type}', cause00 = {$cause[0]}, cause01 = {$cause[1]}, cause10 = {$cause[2]}, cause11 = {$cause[3]}, effect00 = {$effect[0]}, effect01 = {$effect[1]}, effect10 = {$effect[2]}, effect11 = {$effect[3]} WHERE id = {$dominoId}");
-		$this->notifyAllPlayers('message', '', []);
+    $player = $this->playerManager->getPlayer(self::getCurrentPlayerId());
+    self::notifyPlayer($player->getId(), 'updateDomino', '', [
+      'dominos' => $player->getDominos(),
+    ]);
 	}
 
 
@@ -130,6 +134,13 @@ class yinyang extends Table
 
 	public function stStartPlaying()
 	{
+    foreach($this->playerManager->getPlayers() as $player){
+      self::notifyPlayer($player->getId(), 'updateDomino', '', [
+        'dominos' => $player->getDominos(),
+      ]);
+    }
+
+
 		$this->gamestate->changeActivePlayer(self::getGamestateValue("firstPlayer"));
 		$this->gamestate->nextState('');
 	}
@@ -160,7 +171,8 @@ class yinyang extends Table
   {
     $this->log->startTurn();
     $arg = $this->argStartOfTurn();
-    if(empty($arg['_private']['dominos']) && empty($arg['pieces'])){
+    $canApplyLaw = array_reduce($arg['_private']['active']['dominos'], function($carry, $domino){ return $carry || $domino['compatible']; }, false);
+    if(!$canApplyLaw && empty($arg['pieces'])){
       self::DbQuery("UPDATE player SET player_score = 1 WHERE player_id != ". self::getActivePlayerId());
       $this->gamestate->nextState('endGame');
     }

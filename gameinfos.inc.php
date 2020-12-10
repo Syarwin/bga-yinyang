@@ -47,11 +47,13 @@ $gameinfos = [
     'max' => null
   ],
 
-  'presentation' => array(
+  'presentation' => [
+    totranslate("Yin Yang is a strategy board game where you make up your own rules of combat and regeneration."),
+    totranslate("You secretly define on dominoes the lawsby which you fight, then lay them down throughout the game in order to destroy your adversary's pieces or regenerate your own")
   //    totranslate("This wonderful game is about geometric shapes!"),
   //    totranslate("It was awarded best triangle game of the year in 2005 and nominated for the Spiel des Jahres."),
   //    ...
-  ),
+  ],
 
 // Games categories
 //  You can attribute a maximum of FIVE "tags" for your game.
@@ -60,7 +62,7 @@ $gameinfos = [
 //  http://en.doc.boardgamearena.com/Game_meta-information:_gameinfos.inc.php
 //  IMPORTANT: this list should be ORDERED, with the most important tag first.
 //  IMPORTANT: it is mandatory that the FIRST tag is 1, 2, 3 and 4 (= game category)
-  'tags' => [1],
+  'tags' => [1, 11, 20, 30],
 
 
 //////// BGA SANDBOX ONLY PARAMETERS (DO NOT MODIFY)

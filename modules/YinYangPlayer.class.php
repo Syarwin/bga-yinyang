@@ -71,6 +71,7 @@ class YinYangPlayer extends APP_GameClass
       'no'      => $this->no,
       'name'    => $this->name,
       'color'   => $this->color,
+      'no'      => $this->no,
     ];
   }
 

@@ -17,7 +17,7 @@
 
 //# sourceURL=yinyang.js
 //@ sourceURL=yinyang.js
-var isDebug = true;
+var isDebug = window.location.host == 'studio.boardgamearena.com' || window.location.hash.indexOf('debug') > -1;
 var debug = isDebug ? console.info.bind(window.console) : function () { };
 define(["dojo", "dojo/_base/declare", "ebg/core/gamegui", "ebg/counter"], function (dojo, declare) {
   function override_addMoveToLog(logId, moveId) {
@@ -91,8 +91,10 @@ setup (gamedatas) {
         this.highlightZone(zone.x, zone.y, gamedatas.action.player_id != this.player_id);
       } else if(gamedatas.action.action == "movePiece"){
         let arg = gamedatas.action.action_arg;
-        this.highlightSquare(arg.from.x, arg.from.y, gamedatas.action.player_id != this.player_id);
-        this.highlightSquare(arg.to.x, arg.to.y, gamedatas.action.player_id != this.player_id);
+        var a = gamedatas.action.player_id == this.player_id;
+        var flipped = gamedatas.players[gamedatas.action.player_id].no == 2? a : !a;
+        this.highlightSquare(arg.from.x, arg.from.y, flipped);
+        this.highlightSquare(arg.to.x, arg.to.y, flipped);
       }
 
     }, 2000);
@@ -119,6 +121,23 @@ addDomino(domino, container, place){
   dojo.query("#domino-" + domino.id + " .domino-types div").forEach(type => {
     dojo.connect(type, 'onclick', ev => this.onClickDominoType(domino.id, type));
   })
+},
+
+
+notif_updateDomino(n){
+  debug("Updating dominos before starting the game", n);
+  n.args.dominos.forEach(domino => {
+    var id = "domino-" + domino.id;
+    dojo.attr(id, "type", domino.type);
+    dojo.attr(id, "location", domino.location);
+
+    ["cause", "effect"].forEach(grid => {
+      for(var i = 0; i < 2; i++)
+      for(var j = 0; j < 2; j++){
+        dojo.query(`#${id} .domino-${grid} .square[data-x='${i}'][data-y='${j}']`).attr('data-token', domino[grid + "" + i + "" + j]);
+      }
+    });
+  });
 },
 
 /*
@@ -345,7 +364,7 @@ onClickDominoSquare(dominoId, square){
   var token = parseInt(dojo.attr(square, 'data-token'));
   dojo.attr(square, 'data-token', (token + 1) % 3);
   this._dominoId = dominoId;
-  this.checkAllDominos(true);
+  this.checkAllDominos(true, dominoId);
 },
 
 onClickDominoType(dominoId, type){
@@ -354,10 +373,10 @@ onClickDominoType(dominoId, type){
 
   dojo.attr('domino-' + dominoId, 'data-type', type.className.substr(12));
   this._dominoId = dominoId;
-  this.checkAllDominos(true);
+  this.checkAllDominos(true, dominoId);
 },
 
-checkAllDominos(afterEvent){
+checkAllDominos(afterEvent, dominoIdToSend = null){
   this.removeActionButtons();
 
   if(afterEvent && this._limit == 1){
@@ -368,11 +387,11 @@ checkAllDominos(afterEvent){
     });
   }
 
-  if(this._editableDominos.reduce((carry, domino) => carry && this.checkDomino(domino.id, afterEvent), true))
+  if(this._editableDominos.reduce((carry, domino) => carry && this.checkDomino(domino.id, afterEvent, dominoIdToSend), true))
     this.addActionButton('buttonConfirmDominos', _('Confirm'), 'onClickConfirmDominos', null, false, 'blue');
 },
 
-checkDomino(dominoId, afterEvent){
+checkDomino(dominoId, afterEvent, dominoIdToSend){
   var dom = "domino-" + dominoId;
   var type = dojo.attr(dom, 'data-type');
 
@@ -412,10 +431,10 @@ checkDomino(dominoId, afterEvent){
       effect:effect.join(','),
     };
 
-    if(this._limit == 1 && this._confirm && afterEvent)
+    if(this._limit == 1 && this._confirm && afterEvent && dominoId == dominoIdToSend)
       this.takeAction("adaptDomino", data);
-    if(this._limit != 1 && afterEvent)
-      this.takeAction("updateDomino", data, false);
+    if(this._limit != 1 && afterEvent && dominoId == dominoIdToSend)
+      this.takeAction("updateDomino", data);
   }
   else
     dojo.removeClass(dom, 'valid');
@@ -431,9 +450,13 @@ checkDomino(dominoId, afterEvent){
 
 
 onClickConfirmDominos(){
-  if(this._limit == 1 && this._dominoId != null){
-    this._confirm = true;
-    this.checkDomino(this._dominoId, true);
+  if(this._limit == 1){
+    if(this._dominoId != null){
+      this._confirm = true;
+      this.checkDomino(this._dominoId, true, this._dominoId);
+    } else {
+      this.takeAction("passAdapt");
+    }
   } else {
     this.takeAction("confirmDominos", {
       playerId: this.getCurrentPlayerId(),
@@ -448,7 +471,9 @@ onClickConfirmDominos(){
 ////////  Start of turn  ///////
 ////////////////////////////////
 onEnteringStateStartOfTurn(args){
-  if(args._private.dominos && args._private.dominos.length > 0)
+  var canApplyLaw = args._private.dominos && args._private.dominos.reduce( (carry, domino) => carry || domino.compatible, false);
+
+  if(canApplyLaw)
     this.addActionButton('buttonApplyLaw', _('Apply law'), () => this.takeAction('chooseApplyLaw'), null, false, 'blue');
 
   if(args.pieces && args.pieces.length > 0)
@@ -540,7 +565,7 @@ notif_lawApplied(n){
   this.highlightZone(n.args.pos.x, n.args.pos.y, n.args.pId != this.player_id);
 
   var dominoId = 'domino-' + n.args.domino.id;
-  if($(dominoId)){
+  if($(dominoId) && n.args.pId == this.player_id){
     if(dojo.attr(dominoId, 'data-location') == "board"){
       this.highlightDomino(dominoId);
       return;
@@ -552,7 +577,8 @@ notif_lawApplied(n){
     });
   }
   else {
-    this.addDomino(n.args.domino, 'dominos-opponent');
+    if(!$(dominoId))
+      this.addDomino(n.args.domino, 'dominos-opponent');
     this.highlightDomino(dominoId);
   }
 },
@@ -636,11 +662,13 @@ cancelSelectedPiece(){
 },
 
 notif_pieceMoved(n){
-  debug("Notif: a law was applied", n.args);
+  debug("Notif: a piece was moved", n.args);
   this.setBoard(n.args.board);
 
-  this.highlightSquare(n.args.piece.x, n.args.piece.y, n.args.pId != this.player_id);
-  this.highlightSquare(n.args.pos.x, n.args.pos.y, n.args.pId != this.player_id);
+  var a = n.args.pId == this.player_id;
+  var flipped = this.gamedatas.players[n.args.pId].no == 2? a : !a;
+  this.highlightSquare(n.args.piece.x, n.args.piece.y, flipped);
+  this.highlightSquare(n.args.pos.x, n.args.pos.y, flipped);
 },
 
 
@@ -761,6 +789,7 @@ notif_pieceMoved(n){
   */
  setupNotifications () {
    var notifs = [
+     ['updateDomino', 1],
      ['lawApplied', 1100],
      ['dominoAdapted', 1000],
      ['newDomino', 1],
