@@ -128,8 +128,8 @@ notif_updateDomino(n){
   debug("Updating dominos before starting the game", n);
   n.args.dominos.forEach(domino => {
     var id = "domino-" + domino.id;
-    dojo.attr(id, "type", domino.type);
-    dojo.attr(id, "location", domino.location);
+    dojo.attr(id, "data-type", domino.type);
+    dojo.attr(id, "data-location", domino.location);
 
     ["cause", "effect"].forEach(grid => {
       for(var i = 0; i < 2; i++)
@@ -749,6 +749,18 @@ notif_pieceMoved(n){
    let scale = Math.min(box['width'] / boardWidth, h / boardHeight);
    dojo.style("fixed-width-container", "transform", "scale(" + scale + ")");
    dojo.style('fixed-width-container', 'height', (708 * scale) + 'px');
+ },
+
+ setLoader(value,max){
+   this.inherited(arguments);
+   if (!this.isLoadingComplete && value >= 100) {
+     this.isLoadingComplete = true;
+     this.onLoadingComplete();
+   }
+ },
+
+ onLoadingComplete(){
+   setTimeout( () => this.onScreenWidthChange(), 1);
  },
 
 

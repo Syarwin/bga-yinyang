@@ -24,6 +24,15 @@ $machinestates = [
     'type' => 'manager',
     'action' => 'stGameSetup',
     'transitions' => [
+      '' => ST_PRE_BUILD_DOMINOS,
+    ],
+  ],
+
+  ST_PRE_BUILD_DOMINOS => [
+    'name' => 'preBuildDominos',
+    'type' => 'game',
+    'action' => 'stPreBuildDominos',
+    'transitions' => [
       '' => ST_BUILD_DOMINOS,
     ],
   ],
@@ -34,7 +43,6 @@ $machinestates = [
     'descriptionmyturn' => clienttranslate('${you} must build your dominos'),
     'type' => 'multipleactiveplayer',
     'args' => 'argBuildDominos',
-    'action' => 'stBuildDominos',
     'transitions' => [
       'start' => ST_START_PLAYING,
       'endGame' => ST_GAME_END,

@@ -101,11 +101,12 @@ class yinyang extends Table
 	////////////////////////////////////
 	/////////   Build dominos   ////////
 	////////////////////////////////////
-	public function stBuildDominos()
+	public function stPreBuildDominos()
 	{
     foreach($this->playerManager->getPlayers() as $player)
       $this->giveExtraTime($player->getId(), 500);
 		$this->gamestate->setAllPlayersMultiactive();
+    $this->gamestate->nextState('');
 	}
 
 	public function argBuildDominos()
