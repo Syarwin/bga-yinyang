@@ -32,6 +32,8 @@ define('ST_GAME_END', 99);
  */
 define('CURRENT_ROUND', 20);
 define('FIRST_PLAYER', 21);
+define('BLACK_RESERVE', 22);
+define('WHITE_RESERVE', 23);
 
 
 define('BLACK', 1);

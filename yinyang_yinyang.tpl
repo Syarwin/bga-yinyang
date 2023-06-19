@@ -27,6 +27,9 @@
   </div>
 </div>
 <script type="text/javascript">
+var jstpl_player_board = `<div class='reserve' id='\${color}-reserve'>
+  <span class='count' id='\${color}-reserve-count'>\${reserve}</span>
+</div>`;
 var jstpl_domino = `<div class='domino' data-type='\${type}' data-location='\${location}' id='domino-\${id}'>
   <div class="domino-types">
     <div class="domino-type-destruction"></div>

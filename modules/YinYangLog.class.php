@@ -120,7 +120,8 @@ class YinYangLog extends APP_GameClass
     $this->game->board->flipped = false;
     $this->insert(-1, 0, 'startTurn', [
       'board' => $this->game->board->getBoard(),
-      'dominos' => self::getObjectListFromDb("SELECT * FROM domino")
+      'dominos' => self::getObjectListFromDb("SELECT * FROM domino"),
+      'reserve' => $this->game->getReserve()
     ]);
   }
 
@@ -222,6 +223,8 @@ class YinYangLog extends APP_GameClass
           self::DbQuery("UPDATE domino SET location = '{$domino["location"]}', type = '{$domino["type"]}', cause00 = {$domino["cause00"]}, cause01 = {$domino["cause01"]}, cause10 = {$domino["cause10"]}, cause11 = {$domino["cause11"]},".
            "effect00 = {$domino["effect00"]}, effect01 = {$domino["effect01"]}, effect10 = {$domino["effect10"]}, effect11 = {$domino["effect11"]} WHERE id = {$domino["id"]}");
         }
+
+        $this->game->setReserve($args['reserve']);
       }
 
       // Undo statistics
