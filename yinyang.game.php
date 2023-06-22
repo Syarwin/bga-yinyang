@@ -28,6 +28,8 @@ class yinyang extends Table
 //      'optionSetup'  => OPTION_SETUP,
       'currentRound' => CURRENT_ROUND,
       'firstPlayer'  => FIRST_PLAYER,
+      'blackReserve' => BLACK_RESERVE,
+      'whiteReserve' => WHITE_RESERVE,
     ]);
 
     // Initialize logger, board and cards
@@ -61,10 +63,34 @@ class yinyang extends Table
     $pId = $this->activeNextPlayer();
     self::setGameStateInitialValue('firstPlayer', $pId);
     self::setGameStateInitialValue('currentRound', 0);
+    self::setGameStateInitialValue('blackReserve', 8);
+    self::setGameStateInitialValue('whiteReserve', 10);
 
 		$this->notifyAllPlayers('message', clienttranslate('${player_name} will play first'), [
       'player_name' => $this->getActivePlayerName(),
     ]);
+  }
+
+  public function getReserve()
+  {
+    $black = $this->getGameStateValue("blackReserve");
+    $white = $this->getGameStateValue("whiteReserve");
+
+    if(is_null($black)){
+      $black = 8;
+      $white = 10;
+      $this->setGameStateInitialValue('blackReserve', $black);
+      $this->setGameStateInitialValue('whiteReserve', $white);
+    }
+
+    return ['black' => $black, 'white' => $white];
+  }
+
+  public function setReserve($reserve) {
+    if($reserve){
+      $this->setGameStateValue("blackReserve", $reserve['black']);
+      $this->setGameStateValue("whiteReserve", $reserve['white']);
+    }
   }
 
   /*
@@ -84,6 +110,7 @@ class yinyang extends Table
 			'cancelMoveIds' => $this->log->getCancelMoveIds(),
       'action' => $this->log->getLastLog(),
       'players' => self::getCollectionFromDB( "SELECT player_id id, player_name name, player_score score, player_no no FROM player"),
+      'reserve' => $this->getReserve(),
     ];
   }
 

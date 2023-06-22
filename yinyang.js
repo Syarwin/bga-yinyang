@@ -52,6 +52,8 @@ constructor () {
 setup (gamedatas) {
   debug('SETUP', gamedatas);
 
+  // Setup player panels
+  this.setReserve(gamedatas.players, gamedatas.reserve);
   // Setup board
   this.setBoard(gamedatas.board);
   var squares = [];
@@ -103,6 +105,24 @@ setup (gamedatas) {
   this.setupNotifications();
 },
 
+setReserve(players, reserve){
+  Object.getOwnPropertyNames(players).forEach((playerId) => {
+    const player = players[playerId];
+    const color = player.no === "1" ? "black" : "white"
+    const data = {
+      color: color,
+      reserve: reserve[color]
+    };
+    dojo.place(this.format_block("jstpl_player_board", data), $("player_board_" + playerId));
+  });
+},
+
+updateReserve(reserve){
+  if (reserve) {
+    $("black-reserve-count").innerText = reserve.black;
+    $("white-reserve-count").innerText = reserve.white;
+  }
+},
 
 setBoard(board){
   for(var i = 0; i < 4; i++)
@@ -302,6 +322,7 @@ notif_cancel(n) {
   n.args.hand.forEach(domino => this.addDomino(domino, 'player-private-hand'));
   n.args.player.forEach(domino => this.addDomino(domino, 'dominos-player'));
   n.args.opponent.forEach(domino => this.addDomino(domino, 'dominos-opponent'));
+  this.updateReserve(n.args.reserve);
 
   this.cancelNotifications(n.args.moveIds);
 },
@@ -581,6 +602,8 @@ notif_lawApplied(n){
       this.addDomino(n.args.domino, 'dominos-opponent');
     this.highlightDomino(dominoId);
   }
+
+  this.updateReserve(n.args.reserve);
 },
 
 

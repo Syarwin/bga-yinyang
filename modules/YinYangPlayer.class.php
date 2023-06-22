@@ -106,9 +106,10 @@ class YinYangPlayer extends APP_GameClass
 
     $myDominos = $this->getVisibleDominos(true);
     $oppDominos = $this->getVisibleDominos(false);
+    $reserve = $this->game->getReserve();
     foreach($args['dominos'] as &$domino){
       $domino['locations'] = $this->game->board->getAvailableLocations($domino);
-      $domino['compatible'] = YinYangBoard::isCompatible($domino, $myDominos, false) && YinYangBoard::isCompatible($domino, $oppDominos, true);
+      $domino['compatible'] = YinYangBoard::isCompatible($domino, $myDominos, false) && YinYangBoard::isCompatible($domino, $oppDominos, true) && YinYangBoard::hasReserve($domino, $reserve);
     }
     Utils::cleanDominos($args);
 

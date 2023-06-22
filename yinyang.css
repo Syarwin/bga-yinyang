@@ -361,3 +361,34 @@ div#yinyang-mask .square {
 }
 .domino[data-type="adaptation"] .domino-effect .square { display:none; }
 .domino[data-type="adaptation"].selectable:hover .domino-effect, .domino[data-type="adaptation"].selected .domino-effect { border-color:#3faa5a; }
+
+div.reserve {
+  width: 32px;
+  height: 32px;
+  border: 1px solid black;
+  border-radius: 50%;
+  margin: 2px;
+}
+
+div.reserve .count {
+  display: block;
+  width: 32px;
+  line-height: 32px;
+  text-align: center;
+}
+
+#black-reserve {
+  background-color: black;
+}
+
+#black-reserve-count {
+  color: white;
+}
+
+#white-reserve {
+  background-color: white;
+}
+
+#white-reserve-count {
+  color: black;
+}

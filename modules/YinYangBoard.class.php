@@ -71,6 +71,27 @@ class YinYangBoard extends APP_GameClass
     return true;
   }
 
+  public static function hasReserve($dom, $reserve)
+  {
+    if($dom['type'] == "creation"){
+      $black_reserve_change = 0;
+      $white_reserve_change = 0;
+
+      for($x = 0; $x < 2; $x++){
+      for($y = 0; $y < 2; $y++){
+        if(!$dom['cause'.$x.$y]){
+          $piece = $dom['effect'.$x.$y];
+          if($piece == BLACK) $black_reserve_change -= 1;
+          elseif($piece == WHITE) $white_reserve_change -= 1;
+        }
+      }}
+
+      return $reserve['black'] + $black_reserve_change >= 0
+          && $reserve['white'] + $white_reserve_change >= 0;
+    }
+    return true;
+  }
+
   /*
    * getPlacedPieces: return all pieces on the board
    */
@@ -180,6 +201,9 @@ class YinYangBoard extends APP_GameClass
   public function applyLaw($domino, $pos)
   {
     if($domino['type'] != "adaptation"){
+      $black_reserve_change = 0;
+      $white_reserve_change = 0;
+
       for($i = 0; $i < 2; $i++){
       for($j = 0; $j < 2; $j++){
         $x = $i + (int) $pos['x'];
@@ -189,8 +213,19 @@ class YinYangBoard extends APP_GameClass
           $y = 3 - $y;
         }
         $val = $domino['effect'.$i.$j];
+
+        if(!$domino['cause'.$i.$j]){
+          if($val == BLACK) $black_reserve_change -= 1;
+          elseif($val == WHITE) $white_reserve_change -= 1;
+        }
+
         self::DbQuery("UPDATE board SET piece = {$val} WHERE x = {$x} AND y = {$y}");
       }}
+
+      if($black_reserve_change)
+        $this->game->incGameStateValue('blackReserve', $black_reserve_change);
+      if($white_reserve_change)
+        $this->game->incGameStateValue('whiteReserve', $white_reserve_change);
     }
 
     self::DbQuery("UPDATE domino SET location = 'board' WHERE id = {$domino['id']}");
@@ -203,6 +238,7 @@ class YinYangBoard extends APP_GameClass
         'board' => $this->getBoard($player->isFlipped()),
         'domino' => $domino,
         'pos' => $pos,
+        'reserve' => $this->game->getReserve(),
       ]);
     }
   }
