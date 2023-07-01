@@ -177,6 +177,12 @@ onEnteringState (stateName, args) {
     this.updatePageTitle();
   }
 
+  if(args && args.args && args.args.drawStatus && this.gamedatas.gamestate.descriptiondraw) {    
+    this.gamedatas.gamestate.description = this.gamedatas.gamestate.descriptiondraw;
+    this.gamedatas.gamestate.descriptionmyturn = this.gamedatas.gamestate.descriptionmyturndraw;
+    this.updatePageTitle();
+  }
+
   // Stop here if it's not the current player's turn for some states
   if (["startOfTurn", "applyLaw", "movePiece", "adaptDomino"].includes(stateName) && (!this.isCurrentPlayerActive())) return;
 
@@ -311,6 +317,18 @@ onClickConfirm() {
   this.takeAction("confirmTurn");
 },
 
+
+onClickSuggestDraw() {
+  this.takeAction("suggestDraw");
+},
+
+onClickAcceptDraw() {
+  this.takeAction("acceptDraw");
+},
+
+onClickDeclineDraw() {
+  this.takeAction("declineDraw");
+},
 
 notif_cancel(n) {
   debug('Notif: cancel turn', n.args);
@@ -493,12 +511,23 @@ onClickConfirmDominos(){
 ////////////////////////////////
 onEnteringStateStartOfTurn(args){
   var canApplyLaw = args._private.dominos && args._private.dominos.reduce( (carry, domino) => carry || domino.compatible, false);
+  
+  if(args && args.drawStatus) {
+    this.addActionButton('buttonAcceptDraw', _('Agree'), 'onClickAcceptDraw', null, false, 'blue');
+    this.addActionButton('buttonDeclineDraw', _('Decline'), 'onClickDeclineDraw', null, false, 'red');
 
+    return;
+  }
+  
   if(canApplyLaw)
     this.addActionButton('buttonApplyLaw', _('Apply law'), () => this.takeAction('chooseApplyLaw'), null, false, 'blue');
 
   if(args.pieces && args.pieces.length > 0)
     this.addActionButton('buttonMove', _('Move'), () => this.takeAction('chooseMove'), null, false, 'blue');
+
+    if(args && !args.recentDecline) {
+      this.addActionButton('buttonSuggestDraw', _('Propose a draw'), 'onClickSuggestDraw', null, false, 'gray');
+    }
 },
 
 
@@ -694,6 +723,9 @@ notif_pieceMoved(n){
   this.highlightSquare(n.args.pos.x, n.args.pos.y, flipped);
 },
 
+notif_drawSuggested(n){
+},
+
 
  ////////////////////////////////
  ////////////////////////////////
@@ -829,6 +861,7 @@ notif_pieceMoved(n){
      ['dominoAdapted', 1000],
      ['newDomino', 1],
      ['pieceMoved', 1000],
+     ['drawSuggested', 1],
      ['cancel', 10],
    ];
 

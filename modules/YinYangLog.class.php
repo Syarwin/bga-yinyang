@@ -150,6 +150,22 @@ class YinYangLog extends APP_GameClass
     $this->insert(-1, $piece['id'], 'movePiece', $args);
   }
 
+  public function addSuggestDraw()
+  {
+    $this->insert(-1, -1, 'suggestDraw', []);
+  }
+
+  public function addAcceptDraw()
+  {
+    $this->insert(-1, -1, 'acceptDraw', []);
+  }
+
+  public function addDeclineDraw()
+  {
+    $this->insert(-1, -1, 'declineDraw', []);
+  }
+
+
 
 /////////////////////////////////
 /////////////////////////////////
@@ -160,7 +176,7 @@ class YinYangLog extends APP_GameClass
   /*
    * getLastActions : get works and actions of player (used to cancel previous action)
    */
-  public function getLastActions($actions = ['applyLaw', 'movePiece'], $pId = null, $offset = null)
+  public function getLastActions($actions = ['applyLaw', 'movePiece', 'suggestDraw', 'acceptDraw', 'declineDraw'], $pId = null, $offset = null)
   {
     $pId = $pId ?? $this->game->getActivePlayerId();
     $offset = $offset ?? 0;
@@ -187,9 +203,46 @@ class YinYangLog extends APP_GameClass
     return $this->getLastAction('applyLaw');
   }
 
+  public function getLastSuggestDraw()
+  {
+    return $this->getLastAction('suggestDraw');
+  }
+
+  public function getLastAcceptDraw()
+  {
+    return $this->getLastAction('acceptDraw');
+  }
+
+  public function getLastDeclineDraw()
+  {
+    return $this->getLastAction('declineDraw');
+  }
+
+  public function getIsSuggestDraw()
+  {
+    $action = self::getObjectFromDB("SELECT `action` FROM log WHERE `action` IN ('suggestDraw', 'acceptDraw', 'declineDraw') ORDER BY log_id DESC LIMIT 1");
+    return (!is_null($action) && $action['action'] == 'suggestDraw');
+  }
+
+  public function getIsAcceptDraw()
+  {
+    $action = self::getObjectFromDB("SELECT `action` FROM log WHERE `action` IN ('suggestDraw', 'acceptDraw', 'declineDraw') ORDER BY log_id DESC LIMIT 1");
+    return (!is_null($action) && $action['action'] == 'acceptDraw');
+  }
+
+  public function getIsRecentDeclineDraw()
+  {
+    $action1 = self::getObjectFromDB("SELECT max(log_id) as m FROM log WHERE `action` = 'declineDraw'");
+    if (is_null($action1)) {
+      return false;
+    }
+    $action2 = self::getObjectFromDB("SELECT count(log_id) as c FROM log WHERE `action` = 'startTurn' AND log_id > " . intval($action1['m']));
+    return $action2['c'] < 2;
+  }
+
   public function getLastLog()
   {
-    $action = self::getObjectFromDB("SELECT * FROM log WHERE `action` IN ('applyLaw', 'movePiece') ORDER BY log_id DESC LIMIT 1");
+    $action = self::getObjectFromDB("SELECT * FROM log WHERE `action` IN ('applyLaw', 'movePiece', 'suggestDraw', 'acceptDraw', 'declineDraw') ORDER BY log_id DESC LIMIT 1");
     if(!is_null($action))
       $action['action_arg'] = json_decode($action['action_arg'], true);
     return $action;

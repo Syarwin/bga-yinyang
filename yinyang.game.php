@@ -75,14 +75,6 @@ class yinyang extends Table
   {
     $black = $this->getGameStateValue("blackReserve");
     $white = $this->getGameStateValue("whiteReserve");
-
-    if(is_null($black)){
-      $black = 8;
-      $white = 10;
-      $this->setGameStateInitialValue('blackReserve', $black);
-      $this->setGameStateInitialValue('whiteReserve', $white);
-    }
-
     return ['black' => $black, 'white' => $white];
   }
 
@@ -100,6 +92,20 @@ class yinyang extends Table
    */
   protected function getAllDatas($pId = null)
   {
+    if (self::isSpectator()) {
+      $spec = self::getUniqueValueFromDB("SELECT player_id FROM player WHERE player_no = 0");
+      return [
+        'fplayers' => $this->playerManager->getUiData($spec),
+        'board' => $this->board->getUiData($spec),
+        'player' => $this->playerManager->getPlayer($spec)->getVisibleDominos(),
+        'opponent' => $this->playerManager->getPlayer($spec)->getVisibleDominos(false),
+        'hand' => [],
+        'cancelMoveIds' => $this->log->getCancelMoveIds(),
+        'action' => $this->log->getLastLog(),
+        'players' => self::getCollectionFromDB( "SELECT player_id id, player_name name, player_score score, player_no no FROM player"),
+        'reserve' => $this->getReserve(),
+      ];
+    }
     $currentPlayerId = $pId ?? self::getCurrentPlayerId();
     return [
       'fplayers' => $this->playerManager->getUiData($currentPlayerId),
@@ -208,7 +214,13 @@ class yinyang extends Table
 
 	public function argStartOfTurn()
   {
-		return array_merge($this->argApplyLaw(), $this->argMovePiece());
+		return array_merge($this->argDrawStatus(), $this->argApplyLaw(), $this->argMovePiece());
+  }
+
+  public function debugTxt()
+  {
+    $arg = $this->argStartOfTurn();
+    self::dump( 'arg', $arg );
   }
 
 
@@ -227,6 +239,12 @@ class yinyang extends Table
    */
   public function stCheckEndOfGame()
   {
+    if ($this->log->getIsAcceptDraw()){
+      self::DbQuery("UPDATE player SET player_score = 1");
+      $this->gamestate->nextState('endGame');
+      return;
+    }
+
 		foreach($this->playerManager->getPlayers() as $player){
 			$pos = ($player->getNo() == 1)? ['x' => 0, 'y' => 3] : ['x' => 3, 'y' => 0];
 			$piece = self::getObjectFromDB("SELECT piece FROM board WHERE x = {$pos['x']} AND y = {$pos['y']}");
@@ -345,6 +363,42 @@ class yinyang extends Table
 		if(is_null($this->log->getLastLaw()) && !empty($this->argApplyLaw()['_private']['active']['dominos']))
 			$state = "applyLaw";
 		$this->gamestate->nextState($state);
+	}
+
+
+	//////////////////////////////////
+	/////////      Draws      ////////
+	//////////////////////////////////
+	public function argDrawStatus()
+	{
+		return [
+			'drawStatus' => $this->log->getIsSuggestDraw(),
+      'recentDecline' => $this->log->getIsRecentDeclineDraw()
+		];
+	}
+
+  public function suggestDraw()
+	{
+    $this->board->suggestDraw();
+		$this->gamestate->nextState("suggestDraw");
+	}
+
+  public function acceptDraw()
+	{
+    if (!$this->log->getIsSuggestDraw()) {
+      throw new BgaUserException(_("No draw proposal at this time"));
+    }
+    $this->board->acceptDraw();
+		$this->gamestate->nextState("acceptDraw");
+	}
+
+  public function declineDraw()
+	{
+    if (!$this->log->getIsSuggestDraw()) {
+      throw new BgaUserException(_("No draw proposal at this time"));
+    }
+    $this->board->declineDraw();
+		$this->gamestate->nextState("declineDraw");
 	}
 
 
