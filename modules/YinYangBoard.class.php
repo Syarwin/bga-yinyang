@@ -278,4 +278,34 @@ class YinYangBoard extends APP_GameClass
       ]);
     }
   }
+
+  public function suggestDraw()
+  {
+    $this->game->log->addSuggestDraw();
+    foreach($this->game->playerManager->getPlayers() as $player){
+      $this->game->notifyPlayer($player->getId(), 'drawSuggested', clienttranslate('${player_name} proposed a draw'), [
+        'player_name' => $this->game->getActivePlayerName(),
+      ]);
+    }
+  }
+
+  public function acceptDraw()
+  {
+    $this->game->log->addAcceptDraw();
+    foreach($this->game->playerManager->getPlayers() as $player){
+      $this->game->notifyPlayer($player->getId(), 'drawAccepted', clienttranslate('${player_name} agreed to a draw'), [
+        'player_name' => $this->game->getActivePlayerName(),
+      ]);
+    }
+  }
+
+  public function declineDraw()
+  {
+    $this->game->log->addDeclineDraw();
+    foreach($this->game->playerManager->getPlayers() as $player){
+      $this->game->notifyPlayer($player->getId(), 'drawDeclined', clienttranslate('${player_name} declined a draw'), [
+        'player_name' => $this->game->getActivePlayerName(),
+      ]);
+    }
+  }
 }

@@ -136,4 +136,25 @@ class action_yinyang extends APP_GameAction
     self::ajaxResponse();
   }
 
+  public function suggestDraw()
+  {
+    self::setAjaxMode();
+    $this->game->suggestDraw();
+    self::ajaxResponse();
+  }
+
+  public function acceptDraw()
+  {
+    self::setAjaxMode();
+    $this->game->acceptDraw();
+    self::ajaxResponse();
+  }
+
+  public function declineDraw()
+  {
+    self::setAjaxMode();
+    $this->game->declineDraw();
+    self::ajaxResponse();
+  }
+
 }
