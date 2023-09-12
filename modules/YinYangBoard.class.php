@@ -200,6 +200,7 @@ class YinYangBoard extends APP_GameClass
 
   public function applyLaw($domino, $pos)
   {
+    $reserve = $this->game->getReserve();
     if($domino['type'] != "adaptation"){
       $black_reserve_change = 0;
       $white_reserve_change = 0;
@@ -223,9 +224,9 @@ class YinYangBoard extends APP_GameClass
       }}
 
       if($black_reserve_change)
-        $this->game->incGameStateValue('blackReserve', $black_reserve_change);
+        $reserve['black'] = $this->game->incGameStateValue('blackReserve', $black_reserve_change);
       if($white_reserve_change)
-        $this->game->incGameStateValue('whiteReserve', $white_reserve_change);
+        $reserve['white'] = $this->game->incGameStateValue('whiteReserve', $white_reserve_change);
     }
 
     self::DbQuery("UPDATE domino SET location = 'board' WHERE id = {$domino['id']}");
@@ -238,7 +239,7 @@ class YinYangBoard extends APP_GameClass
         'board' => $this->getBoard($player->isFlipped()),
         'domino' => $domino,
         'pos' => $pos,
-        'reserve' => $this->game->getReserve(),
+        'reserve' => $reserve,
       ]);
     }
   }
