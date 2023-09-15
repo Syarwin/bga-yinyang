@@ -245,7 +245,7 @@ onUpdateActionButtons (stateName, args, suppressTimers) {
 ////////////////////////////////
 
 onEnteringStateConfirmTurn(args){
-  this.startActionTimer('buttonConfirm');
+  //this.startActionTimer('buttonConfirm');
 },
 
 
